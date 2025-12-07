@@ -45,24 +45,21 @@ Built to replace outdated spreadsheets and fragmented tools, DocSync brings ever
 | Database | MySQL (Fully structured relational schema) |
 
 ---
-
-## 📁 Project Structure
-DocSync/
-├─ DocSync(Frontend)/
-│ ├─ src/
-│ │ ├─ pages/ # Login screens, Landing, future dashboards
-│ │ ├─ components/ # UI + shared layout
-│ │ ├─ auth/ # Login logic
-│ │ └─ App.jsx # Routes + Providers
-│ └─ tailwind.config.js
-│
-├─ DocSync(Backend)/
-│ ├─ src/main/java/... # Spring Boot services, controllers, models
-│ └─ application.properties
-│
-└─ database/
-└─ schema.sql # Hospital-grade relational schema
-
+```text
+📂 DocSync/
+├── 📂 DocSync(Frontend)/
+│   ├── 📂 src/
+│   │   ├── 📂 pages/         # Login screens, Landing, future dashboards
+│   │   ├── 📂 components/    # UI + shared layout
+│   │   ├── 📂 auth/          # Login logic
+│   │   └── ⚛️ App.jsx        # Routes + Providers
+│   └── ⚙️ tailwind.config.js
+├── 📂 DocSync(Backend)/
+│   ├── 📂 src/main/java/...  # Spring Boot services, controllers, models
+│   └── 📄 application.properties
+└── 📂 database/
+    └── 🗄️ schema.sql         # Hospital-grade relational schema
+```
 ---
 
 ## 🗄 Database Overview
