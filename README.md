@@ -101,26 +101,6 @@ npm run dev
 cd ../backend
 mvn spring-boot:run
 ```
-
-⚙️ Configuration
-Frontend .env
-VITE_API_URL=http://localhost:8080
-
-Backend .env (Spring)
-SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/docsync
-SPRING_DATASOURCE_USERNAME=root
-SPRING_DATASOURCE_PASSWORD=YOURPASSWORD
-
-🧭 Roadmap
-Feature	Status
-JWT authentication + RBAC	🔜
-Doctor Dashboard	🔜
-Audit Log Viewer + Notifications	🔜
-Appointment Calendar + Queue	🔜
-Reporting & Analytics	🔜
-Mobile Friendly Portal	🔜
-🎥 UI Preview (Current Progress)
-
 ✔ Minimal clean login screens
 ✔ Role-based entry points
 ✔ Theme toggle support (Light/Dark)
@@ -129,17 +109,12 @@ Mobile Friendly Portal	🔜
 🤝 Contributing
 
 Contributions, ideas, bug reports & improvements are welcome.
-
 Before submitting a PR:
-
 Open an Issue
-
 Describe requested feature or fix
-
 Attach UI mock or example where applicable
 
 📜 License
-
 🚧 Currently private – licensing will be added upon stable release.
 
 👤 Authors
