@@ -88,16 +88,22 @@ DocSync is built on a **true hospital workflow schema**, not CRUD tables.
 ```bash
 git clone https://github.com/yourusername/docsync.git
 cd docsync
+```
 2️⃣ Install Frontend Dependencies
+```bash
 cd frontend
 npm install
-
+```
 3️⃣ Start Frontend
+```bash
 npm run dev
+```
 
 4️⃣ Start Backend (Spring Boot)
+```bash
 cd ../backend
 mvn spring-boot:run
+```
 
 ⚙️ Configuration
 Frontend .env
