@@ -25,10 +25,8 @@ public class User {
     private String username; // This will hold the Email
 
     private String password; // Nullable for OAuth2 users
-
     @Column(length = 50)
     private String role;
-
     @OneToOne
     @JoinColumn(name = "doctor_id")
     private Doctor doctor;
