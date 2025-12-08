@@ -3,6 +3,8 @@ package com.docsync.app.bean;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,6 +18,7 @@ import lombok.Data;
 @Entity
 @Table(name = "task_assignments")
 @Data
+@EnableJpaAuditing
 public class TaskAssignment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

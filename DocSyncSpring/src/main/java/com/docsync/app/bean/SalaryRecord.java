@@ -3,6 +3,8 @@ package com.docsync.app.bean;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,6 +18,7 @@ import lombok.Data;
 @Entity
 @Table(name = "salary_records")
 @Data
+@EnableJpaAuditing
 public class SalaryRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

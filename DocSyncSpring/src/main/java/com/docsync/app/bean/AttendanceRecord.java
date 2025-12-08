@@ -3,6 +3,8 @@ package com.docsync.app.bean;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,6 +18,7 @@ import lombok.Data;
 @Entity
 @Table(name = "attendance_records")
 @Data
+@EnableJpaAuditing
 public class AttendanceRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
