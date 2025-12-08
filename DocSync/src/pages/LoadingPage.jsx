@@ -1,17 +1,30 @@
-"use client";
-
 import React from "react";
 import { Stethoscope } from "lucide-react";
 import { motion } from "framer-motion";
+// Ensure this path matches where you saved your ThemeProvider
+import { useTheme } from "../components/theme/ThemeProvider"; 
 
-export default function LoadingScreen() {
+export default function LoadingPage() {
+  // 1. Access your theme state directly
+  const { theme } = useTheme();
+  
+  // 2. Derive boolean for logic simplicity
+  const isDark = theme === "dark";
+
+  // 3. Define Dynamic Colors based on JavaScript state
+  // These are needed for the SVG Glow/Filter effects which Tailwind classes can't handle easily
+  const shadowColor = isDark 
+    ? "rgba(96, 165, 250, 0.9)" // Neon Blue (Dark Mode)
+    : "rgba(37, 99, 235, 0.4)"; // Soft Blue (Light Mode)
+
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-50">
+    // Tailwind 'dark:' classes automatically handle the background color
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-500">
       
       {/* --- Background Decor --- */}
-      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-blue-400/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-400/20 rounded-full blur-[120px]" />
+      <div className="absolute inset-0 z-0 opacity-40 dark:opacity-20 pointer-events-none transition-opacity duration-500">
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-blue-400/20 dark:bg-blue-600/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-400/20 dark:bg-indigo-600/10 rounded-full blur-[120px]" />
       </div>
 
       <motion.div
@@ -21,14 +34,12 @@ export default function LoadingScreen() {
         className="z-10 flex flex-col items-center relative"
       >
         {/* --- CENTRAL COMPONENT WRAPPER --- */}
-        {/* We use a defined height here to ensure layout stability */}
-        <div className="relative flex items-center justify-center w-[600px] h-[300px] mb-8">
+        <div className="relative flex items-center justify-center w-[300px] sm:w-[600px] h-[300px] mb-8">
           
           {/* 1. THE MASSIVE EKG LINE (Background Layer z-0) */}
-          {/* Scaled up significantly: w-[600px] ensures it spans wide behind the logo */}
           <svg
-            className="absolute z-0 w-full h-full pointer-events-none opacity-40"
-            viewBox="0 0 400 200" // Increased viewbox for a taller spike
+            className="absolute z-0 w-full h-full pointer-events-none opacity-40 dark:opacity-60 transition-opacity duration-500"
+            viewBox="0 0 400 200"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             style={{ 
@@ -38,11 +49,10 @@ export default function LoadingScreen() {
             }}
           >
             <motion.path
-              // The path: M(start) -> L(flat) -> L(spike up) -> L(spike down) -> L(return) -> L(end)
-              // Coordinates adjusted to be much taller (20 to 180 on Y axis)
               d="M0 100 L140 100 L160 20 L180 180 L200 100 L220 100 L400 100"
-              stroke="#3B82F6" 
-              strokeWidth="6" // Thicker stroke to be visible at this scale
+              // Tailwind handles the stroke color transition
+              className="stroke-blue-500 dark:stroke-blue-400 transition-colors duration-500"
+              strokeWidth="6"
               strokeLinecap="round"
               strokeLinejoin="round"
               initial={{ pathLength: 0, opacity: 0 }}
@@ -55,7 +65,11 @@ export default function LoadingScreen() {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              style={{ filter: "drop-shadow(0px 0px 10px rgba(59, 130, 246, 0.4))" }}
+              // Inline style handles the Glow effect using our Context state
+              style={{ 
+                filter: `drop-shadow(0px 0px 10px ${shadowColor})`,
+                transition: "filter 0.5s ease" 
+              }}
             />
           </svg>
 
@@ -63,11 +77,11 @@ export default function LoadingScreen() {
           {[0, 1, 2].map((index) => (
             <motion.div
               key={index}
-              className="absolute border border-blue-400/30 rounded-full z-10"
+              className="absolute border border-blue-400/30 dark:border-blue-400/20 rounded-full z-10"
               initial={{ width: "100px", height: "100px", opacity: 0 }}
               animate={{
-                width: ["100px", "400px"], // Much wider ripple
-                height: ["100px", "400px"],
+                width: ["100px", "300px"], 
+                height: ["100px", "300px"],
                 opacity: [0.3, 0],
               }}
               transition={{
@@ -79,14 +93,12 @@ export default function LoadingScreen() {
             />
           ))}
 
-          {/* 3. The White Container (Foreground z-20) */}
-          {/* This sits perfectly in the center, on top of the line */}
+          {/* 3. The Central Box (Foreground z-20) */}
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="relative z-20 flex items-center justify-center w-28 h-28 bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(29,78,216,0.25)]"
+            className="relative z-20 flex items-center justify-center w-28 h-28 bg-white dark:bg-slate-900 rounded-3xl shadow-[0_20px_60px_-15px_rgba(29,78,216,0.25)] dark:shadow-[0_20px_60px_-15px_rgba(29,78,216,0.5)] dark:border dark:border-slate-800 transition-all duration-500"
           >
-             {/* The Icon Heartbeat */}
             <motion.div
               animate={{ 
                 scale: [1, 1.15, 1],
@@ -98,21 +110,20 @@ export default function LoadingScreen() {
                 ease: "easeInOut"
               }}
             >
-              <Stethoscope className="w-14 h-14 text-blue-600" strokeWidth={2} />
+              <Stethoscope className="w-14 h-14 text-blue-600 dark:text-blue-500 transition-colors duration-500" strokeWidth={2} />
             </motion.div>
           </motion.div>
-
         </div>
 
         {/* --- TYPOGRAPHY --- */}
-        <div className="text-center z-30 -mt-10"> {/* Negative margin to pull text closer to the graphic */}
+        <div className="text-center z-30 -mt-10">
           <motion.h1
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            className="text-5xl font-bold tracking-tight text-slate-800"
+            className="text-5xl font-bold tracking-tight text-slate-800 dark:text-slate-100 transition-colors duration-500"
           >
-            Doc<span className="text-blue-600">Sync</span>
+            Doc<span className="text-blue-600 dark:text-blue-400 transition-colors duration-500">Sync</span>
           </motion.h1>
 
           <motion.div
@@ -121,24 +132,17 @@ export default function LoadingScreen() {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="flex items-center justify-center gap-1 mt-4"
           >
-            <span className="text-slate-500 font-medium text-xl">
+            <span className="text-slate-500 dark:text-slate-400 font-medium text-xl transition-colors duration-500">
               Syncing workspace
             </span>
-            <motion.span
-              animate={{ opacity: [0, 1, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5, delay: 0 }}
-              className="text-slate-500 text-xl"
-            >.</motion.span>
-            <motion.span
-              animate={{ opacity: [0, 1, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}
-              className="text-slate-500 text-xl"
-            >.</motion.span>
-            <motion.span
-              animate={{ opacity: [0, 1, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }}
-              className="text-slate-500 text-xl"
-            >.</motion.span>
+            {[0, 1, 2].map((i) => (
+               <motion.span
+               key={i}
+               animate={{ opacity: [0, 1, 0] }}
+               transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.2 }}
+               className="text-slate-500 dark:text-slate-400 text-xl"
+             >.</motion.span>
+            ))}
           </motion.div>
         </div>
       </motion.div>
