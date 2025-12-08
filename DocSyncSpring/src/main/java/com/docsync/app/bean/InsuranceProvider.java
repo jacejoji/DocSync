@@ -1,5 +1,7 @@
 package com.docsync.app.bean;
 
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,6 +13,7 @@ import lombok.Data;
 @Entity
 @Table(name = "insurance_providers")
 @Data
+@EnableJpaAuditing
 public class InsuranceProvider {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
