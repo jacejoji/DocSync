@@ -1,94 +1,147 @@
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Stethoscope, Calendar, Users, ClipboardPlus } from "lucide-react";
-import ThemeToggle from "@/components/theme/ThemeToggle";
+"use client";
 
-export default function LandingPage() {
+import React from "react";
+import { Stethoscope } from "lucide-react";
+import { motion } from "framer-motion";
+
+export default function LoadingScreen() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="w-full py-5 border-b backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 flex justify-between items-center gap-4">
-          <div className="flex gap-2 items-center">
-            <Stethoscope className="h-6 w-6 text-primary" />
-            <h1 className="font-bold text-xl">DocSync</h1>
-          </div>
+    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-50">
+      
+      {/* --- Background Decor --- */}
+      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-blue-400/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-400/20 rounded-full blur-[120px]" />
+      </div>
 
-          <div className="flex items-center gap-3">
-            <Link to="/doctor/login">
-              <Button variant="outline" size="sm">
-                Doctor Login
-              </Button>
-            </Link>
-            <Link to="/admin/login">
-              <Button size="sm">Admin Login</Button>
-            </Link>
-            <ThemeToggle />
-          </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        className="z-10 flex flex-col items-center relative"
+      >
+        {/* --- CENTRAL COMPONENT WRAPPER --- */}
+        {/* We use a defined height here to ensure layout stability */}
+        <div className="relative flex items-center justify-center w-[600px] h-[300px] mb-8">
+          
+          {/* 1. THE MASSIVE EKG LINE (Background Layer z-0) */}
+          {/* Scaled up significantly: w-[600px] ensures it spans wide behind the logo */}
+          <svg
+            className="absolute z-0 w-full h-full pointer-events-none opacity-40"
+            viewBox="0 0 400 200" // Increased viewbox for a taller spike
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ 
+                left: "50%", 
+                top: "50%", 
+                transform: "translate(-50%, -50%)" 
+            }}
+          >
+            <motion.path
+              // The path: M(start) -> L(flat) -> L(spike up) -> L(spike down) -> L(return) -> L(end)
+              // Coordinates adjusted to be much taller (20 to 180 on Y axis)
+              d="M0 100 L140 100 L160 20 L180 180 L200 100 L220 100 L400 100"
+              stroke="#3B82F6" 
+              strokeWidth="6" // Thicker stroke to be visible at this scale
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ 
+                pathLength: [0, 1, 1], 
+                opacity: [0, 1, 0],    
+              }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              style={{ filter: "drop-shadow(0px 0px 10px rgba(59, 130, 246, 0.4))" }}
+            />
+          </svg>
+
+          {/* 2. The Pulse Ripples (Middle Layer z-10) */}
+          {[0, 1, 2].map((index) => (
+            <motion.div
+              key={index}
+              className="absolute border border-blue-400/30 rounded-full z-10"
+              initial={{ width: "100px", height: "100px", opacity: 0 }}
+              animate={{
+                width: ["100px", "400px"], // Much wider ripple
+                height: ["100px", "400px"],
+                opacity: [0.3, 0],
+              }}
+              transition={{
+                repeat: Infinity,
+                duration: 2.5,
+                delay: index * 0.5,
+                ease: "easeOut",
+              }}
+            />
+          ))}
+
+          {/* 3. The White Container (Foreground z-20) */}
+          {/* This sits perfectly in the center, on top of the line */}
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="relative z-20 flex items-center justify-center w-28 h-28 bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(29,78,216,0.25)]"
+          >
+             {/* The Icon Heartbeat */}
+            <motion.div
+              animate={{ 
+                scale: [1, 1.15, 1],
+              }}
+              transition={{
+                repeat: Infinity,
+                duration: 2.5,
+                times: [0, 0.15, 1],
+                ease: "easeInOut"
+              }}
+            >
+              <Stethoscope className="w-14 h-14 text-blue-600" strokeWidth={2} />
+            </motion.div>
+          </motion.div>
+
         </div>
-      </header>
 
-      {/* Hero Section */}
-      <section className="max-w-6xl mx-auto px-6 py-20 text-center flex flex-col items-center gap-6">
-        <h2 className="text-4xl font-bold tracking-tight">
-          Manage Doctors, Appointments & Hospital Workflow Effortlessly
-        </h2>
+        {/* --- TYPOGRAPHY --- */}
+        <div className="text-center z-30 -mt-10"> {/* Negative margin to pull text closer to the graphic */}
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="text-5xl font-bold tracking-tight text-slate-800"
+          >
+            Doc<span className="text-blue-600">Sync</span>
+          </motion.h1>
 
-        <p className="max-w-2xl text-muted-foreground">
-          A modern doctor management system designed to streamline hospital operations,
-          automate appointment handling, track performance, and improve patient care.
-        </p>
-
-        <div className="flex gap-4 mt-4">
-          <Link to="/admin/login">
-            <Button size="lg">Get Started (Admin)</Button>
-          </Link>
-          <Link to="/doctor/login">
-            <Button size="lg" variant="outline">
-              Doctor Portal
-            </Button>
-          </Link>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="flex items-center justify-center gap-1 mt-4"
+          >
+            <span className="text-slate-500 font-medium text-xl">
+              Syncing workspace
+            </span>
+            <motion.span
+              animate={{ opacity: [0, 1, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5, delay: 0 }}
+              className="text-slate-500 text-xl"
+            >.</motion.span>
+            <motion.span
+              animate={{ opacity: [0, 1, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}
+              className="text-slate-500 text-xl"
+            >.</motion.span>
+            <motion.span
+              animate={{ opacity: [0, 1, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }}
+              className="text-slate-500 text-xl"
+            >.</motion.span>
+          </motion.div>
         </div>
-      </section>
-
-      {/* Feature Section */}
-      <section className="max-w-6xl mx-auto px-6 pb-20 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-        <FeatureCard
-          icon={<Calendar className="w-8 h-8 text-primary" />}
-          title="Appointments"
-          desc="Schedule, manage and optimize patient appointments."
-        />
-        <FeatureCard
-          icon={<Users className="w-8 h-8 text-primary" />}
-          title="Doctors & Staff"
-          desc="Handle profiles, roles, departments, and permissions."
-        />
-        <FeatureCard
-          icon={<ClipboardPlus className="w-8 h-8 text-primary" />}
-          title="Reports"
-          desc="View insights, activity logs, and performance records."
-        />
-        <FeatureCard
-          icon={<Stethoscope className="w-8 h-8 text-primary" />}
-          title="Medical Records"
-          desc="Securely manage and access digital patient health files."
-        />
-      </section>
+      </motion.div>
     </div>
-  );
-}
-
-function FeatureCard({ icon, title, desc }) {
-  return (
-    <Card className="p-4 shadow hover:shadow-lg transition">
-      <CardHeader className="flex flex-col items-center">
-        {icon}
-        <CardTitle className="mt-4">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="text-center text-muted-foreground text-sm">
-        {desc}
-      </CardContent>
-    </Card>
   );
 }
