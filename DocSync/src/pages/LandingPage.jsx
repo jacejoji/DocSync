@@ -24,9 +24,26 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
+import LoadingPage from "./LoadingPage";
+import { useEffect, useState } from "react";
 
 export default function LandingPage() {
-  const { user } = useAuth(); // <--- 2. Get User State
+  const { user, loading: authLoading } = useAuth(); // Get Auth Loading status
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Effect: Force the splash screen to stay for at least 1.5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 1500); // Adjust time as needed
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // CONDITION: If Auth is still checking OR the timer hasn't finished, show loader
+  if (authLoading || showSplash) {
+    return <LoadingPage />;
+  }
 
   // Helper to determine where the dashboard button leads
   const dashboardLink = user?.role === "ADMIN" ? "/admin/dashboard" : "/doctor/dashboard";

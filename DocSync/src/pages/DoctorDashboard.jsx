@@ -21,9 +21,27 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import DoctorNavbar from "@/components/layout/DoctorNavbar";
+import { useEffect, useState } from "react";
+import LoadingPage from "./LoadingPage";
 
 export default function DoctorDashboard() {
   const { user, logout } = useAuth();
+  const [isLoading, setIsLoading] = useState(true); // <--- 3. Loading State
+
+  // 4. Simulate Data Fetching Effect
+  useEffect(() => {
+    // In the future, this is where you would await fetch("http://.../appointments")
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000); // Show loader for 2 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 5. Render Loading Screen if active
+  if (isLoading) {
+    return <LoadingPage />;
+  }
 
   // Mock Data
   const appointments = [
