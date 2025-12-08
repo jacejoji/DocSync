@@ -2,6 +2,8 @@ package com.docsync.app.bean;
 
 import java.time.LocalDateTime;
 
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,6 +15,7 @@ import lombok.Data;
 @Entity
 @Table(name = "compliance_training")
 @Data
+@EnableJpaAuditing
 public class ComplianceTraining {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

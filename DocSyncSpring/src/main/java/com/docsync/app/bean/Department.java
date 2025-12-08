@@ -1,5 +1,6 @@
 package com.docsync.app.bean;
 
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
