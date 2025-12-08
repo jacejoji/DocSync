@@ -85,7 +85,7 @@ export default function AdminLogin() {
               <LoginForm
                 roleLabel="Admin"
                 subtitle="Enter your administrator credentials to continue."
-                redirectTo="/loading"
+            
               />
             </div>
           </div>

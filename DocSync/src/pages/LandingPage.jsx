@@ -14,6 +14,7 @@ import {
   Wallet,
   HeartPulse,
   BriefcaseMedical,
+  LayoutDashboard
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LandingPage() {
+  const { user } = useAuth(); // <--- 2. Get User State
+
+  // Helper to determine where the dashboard button leads
+  const dashboardLink = user?.role === "ADMIN" ? "/admin/dashboard" : "/doctor/dashboard";
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* HEADER */}
@@ -57,18 +63,37 @@ export default function LandingPage() {
               <a href="#depth" className="hover:text-foreground">
                 Data Depth
               </a>
+               <ThemeToggle />
             </nav>
 
             <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Link to="/doctor/login">
-                <Button variant="outline" size="sm">
-                  Doctor Login
+             
+              {/* --- CONDITIONAL RENDERING --- */}
+            {user ? (
+              // Case A: User IS Logged In
+              <Button asChild>
+                <Link to={dashboardLink}>
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  Go to Dashboard
+                </Link>
+              </Button>
+            ) : (
+              // Case B: User is NOT Logged In
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" asChild>
+                  <Link to="/admin/login">
+                    <ShieldCheck className="mr-2 h-4 w-4 text-muted-foreground" />
+                    Admin
+                  </Link>
                 </Button>
-              </Link>
-              <Link to="/admin/login">
-                <Button size="sm">Admin Login</Button>
-              </Link>
+                <Button asChild>
+                  <Link to="/doctor/login">
+                    Doctor Login <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            )}
+            {/* ----------------------------- */}
             </div>
           </div>
         </div>

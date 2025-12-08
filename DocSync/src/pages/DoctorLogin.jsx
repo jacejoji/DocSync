@@ -84,7 +84,7 @@ export default function DoctorLogin() {
               <LoginForm
                 roleLabel="Doctor"
                 subtitle="Enter your doctor credentials to continue."
-                redirectTo="/loading"
+              
               />
             </div>
           </div>
