@@ -1,5 +1,4 @@
 package com.docsync.app.controller;
-
 import java.util.List;
 
 import org.springframework.http.HttpStatus;

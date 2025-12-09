@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -13,32 +14,42 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // 1. Define the Repository Bean first (Required by Controller and SecurityChain)
     @Bean
     public SecurityContextRepository securityContextRepository() {
         return new HttpSessionSecurityContextRepository();
     }
 
-    // 2. Inject the repository as a parameter here
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
         http
+            // 1. ENABLE CORS HERE
+            .cors(Customizer.withDefaults())
+            
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 // -- Swagger UI & API Docs --
-            		.requestMatchers(
-                            "/v3/api-docs/**",
-                            "/swagger-ui/**",
-                            "/swagger-ui.html",
-                            "/swagger-resources/**",
-                            "/webjars/**"
-                        ).permitAll()
-            		.requestMatchers("/error").permitAll()
+                .requestMatchers(
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/swagger-resources/**",
+                        "/webjars/**"
+                ).permitAll()
+                .requestMatchers("/error").permitAll()
+                
+                // 2. Allow OPTIONS requests (Pre-flight checks) explicitly
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                 // -- Authentication --
                 .requestMatchers("/auth/**").permitAll()
 
@@ -47,20 +58,41 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/departments/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/departments/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/departments/**").permitAll()
+                .requestMatchers(HttpMethod.PATCH, "/equipment/**").permitAll()
 
                 // -- Fallback --
                 .anyRequest().authenticated()
-             
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
             )
             .securityContext(context -> context
-                // Use the injected parameter variable, not the method call
                 .securityContextRepository(securityContextRepository) 
             );
 
         return http.build();
+    }
+
+    // 3. DEFINE THE CORS CONFIGURATION BEAN
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        // ALLOW YOUR FRONTEND URL (Adjust port if not 5173)
+        configuration.setAllowedOrigins(List.of("http://localhost:5173")); 
+        
+        // Allow necessary HTTP methods
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        
+        // Allow headers (Authorization, Content-Type, etc.)
+        configuration.setAllowedHeaders(List.of("*"));
+        
+        // Allow cookies/credentials (Crucial for Session-based auth)
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean

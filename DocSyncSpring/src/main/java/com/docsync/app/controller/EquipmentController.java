@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.docsync.app.bean.Equipment;
 import com.docsync.app.service.EquipmentService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/equipment")

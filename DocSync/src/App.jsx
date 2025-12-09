@@ -1,80 +1,110 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
+// 1. Pages
 import LandingPage from "./pages/LandingPage";
 import LoadingPage from "./pages/LoadingPage";
+import ForbiddenPage from "./pages/ForbiddenPage";
+
+// 2. Auth Pages
 import AdminLogin from "./pages/AdminLogin";
 import DoctorLogin from "./pages/DoctorLogin";
-
-import { ThemeProvider } from "./components/theme/ThemeProvider";
-import { Toaster } from "@/components/ui/sonner";
 import DoctorRegister from "./pages/DoctorRegister";
-import { AuthProvider } from "@/context/AuthContext"; // <--- Import Provider
-import ProtectedRoute from "@/components/auth/ProtectedRoute"; // <--- Import Guard
-import ForbiddenPage from "./pages/ForbiddenPage";
+
+// 3. Layouts & Admin Components
+import AdminLayout from "@/components/layout/AdminLayout"; 
+import DoctorLayout from "./components/layout/DoctorLayout";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
-import PublicRoute from "./components/auth/PublicRoute";
+import Departments from "./pages/admin/Departments"; 
+import Equipment from "./pages/admin/Equipment";     
+
+// 5. Context & Providers
+import { ThemeProvider } from "./components/theme/ThemeProvider";
+import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/context/AuthContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import PublicRoute from "@/components/auth/PublicRoute";
+
 export default function App() {
   return (
-    <ThemeProvider >
+    <ThemeProvider>
       <BrowserRouter>
         <AuthProvider>
           <Routes>
             {/* --- Public Routes --- */}
             <Route path="/" element={<LandingPage />} />
-            {/* --- Public Routes (Wrapped to redirect if already logged in) --- */}
-            <Route 
-              path="/admin/login" 
+            <Route path="/loading" element={<LoadingPage />} />
+            <Route path="/forbidden" element={<ForbiddenPage />} />
+
+            {/* --- Auth Routes (Redirects if logged in) --- */}
+            <Route
+              path="/admin/login"
               element={
                 <PublicRoute>
                   <AdminLogin />
                 </PublicRoute>
-              } 
+              }
             />
-            <Route 
-              path="/doctor/login" 
+            <Route
+              path="/doctor/login"
               element={
                 <PublicRoute>
                   <DoctorLogin />
                 </PublicRoute>
-              } 
+              }
             />
-            <Route 
-              path="/doctor/register" 
+            <Route
+              path="/doctor/register"
               element={
                 <PublicRoute>
                   <DoctorRegister />
                 </PublicRoute>
-              } 
+              }
             />
-            <Route path="/loading" element={<LoadingPage />} />
-            <Route path="/forbidden" element={<ForbiddenPage />} />
 
-            {/* --- Protected Routes --- */}
-            
-            {/* 2. Protect Doctor Dashboard */}
-            <Route 
-              path="/doctor/dashboard" 
+            <Route
+              path="/doctor"
               element={
                 <ProtectedRoute allowedRoles={["DOCTOR"]}>
-                  <DoctorDashboard />
+                  <DoctorLayout />
                 </ProtectedRoute>
-              } 
-            />
+              }
+            >
+              {/* Default redirect: /doctor -> /doctor/dashboard */}
+              <Route index element={<Navigate to="dashboard" replace />} />
+              
+              <Route path="dashboard" element={<DoctorDashboard />} />
+              
+              {/* Placeholders*/}
+              <Route path="appointments" element={<div className="p-6">Appointments Page Coming Soon</div>} />
+              <Route path="patients" element={<div className="p-6">My Patients Page Coming Soon</div>} />
+              <Route path="roster" element={<div className="p-6">Duty Roster Page Coming Soon</div>} />
+              <Route path="leaves" element={<div className="p-6">Leave Management Page Coming Soon</div>} />
+              <Route path="payroll" element={<div className="p-6">Payroll Page Coming Soon</div>} />
+            </Route>
 
-            {/* 3. Protect Admin Dashboard */}
-            <Route 
-              path="/admin/dashboard" 
+            {/* --- ADMIN ROUTES (Nested Layout Architecture) --- */}
+            <Route
+              path="/admin"
               element={
                 <ProtectedRoute allowedRoles={["ADMIN"]}>
-                  <AdminDashboard />
+                  <AdminLayout />
                 </ProtectedRoute>
-              } 
-            />
+              }
+            >
+              {/* Default redirect: /admin -> /admin/dashboard */}
+              <Route index element={<Navigate to="dashboard" replace />} />
+
+              {/* The <Outlet /> in AdminLayout will render these: */}
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="departments" element={<Departments />} />
+              <Route path="equipment" element={<Equipment />} />
+            </Route>
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-          
+
           <Toaster />
         </AuthProvider>
       </BrowserRouter>

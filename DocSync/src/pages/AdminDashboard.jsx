@@ -32,6 +32,7 @@ import { useEffect, useState } from "react";
 import LoadingPage from "./LoadingPage";
 
 export default function AdminDashboard() {
+  // eslint-disable-next-line no-unused-vars
   const { user, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(true); // <--- 3. Loading State
 
@@ -77,8 +78,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-muted/20">
-      {/* NEW NAVBAR */}
-      <AdminNavbar />
 
       <main className="p-6 space-y-8">
         {/* Stats Row */}

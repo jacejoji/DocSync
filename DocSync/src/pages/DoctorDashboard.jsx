@@ -25,6 +25,7 @@ import { useEffect, useState } from "react";
 import LoadingPage from "./LoadingPage";
 
 export default function DoctorDashboard() {
+  // eslint-disable-next-line no-unused-vars
   const { user, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(true); // <--- 3. Loading State
 
@@ -73,9 +74,6 @@ export default function DoctorDashboard() {
 
   return (
     <div className="min-h-screen bg-muted/20">
-      {/* NAVBAR */}
-      <DoctorNavbar />
-
       <main className="p-6 space-y-8">
         {/* Welcome Section */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
