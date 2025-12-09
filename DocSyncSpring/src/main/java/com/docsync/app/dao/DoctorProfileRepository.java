@@ -9,5 +9,5 @@ import com.docsync.app.bean.DoctorProfile;
 
 @Repository
 public interface DoctorProfileRepository extends JpaRepository<DoctorProfile, Long> {
-    Optional<DoctorProfile> findByDoctorId(Long doctorId);
+    Optional<DoctorProfile> findByDoctorId(Long Id);
 }
