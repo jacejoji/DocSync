@@ -26,4 +26,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment,Long> {
     List<Appointment> findConflictingAppointments(@Param("doctorId") Long doctorId, 
                                                   @Param("start") LocalDateTime start, 
                                                   @Param("end") LocalDateTime end);
+    List<Appointment> findByDoctorId(Long doctorId);
+    List<Appointment> findByPatientId(Long patientId);
 }
