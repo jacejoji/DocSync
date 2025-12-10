@@ -16,7 +16,7 @@ import com.docsync.app.service.DepartmentTransferService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/transfers")
+@RequestMapping("/transfers")
 @RequiredArgsConstructor
 public class DepartmentTransferController {
 
