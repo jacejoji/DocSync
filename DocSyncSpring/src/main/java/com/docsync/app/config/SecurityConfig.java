@@ -59,6 +59,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/departments/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/departments/**").permitAll()
                 .requestMatchers(HttpMethod.PATCH, "/equipment/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/equipment/**").permitAll()
+				.requestMatchers(HttpMethod.POST, "/doctor-documents/**").permitAll()
+				.requestMatchers(HttpMethod.GET, "/doctor-documents/**").permitAll()
+				.requestMatchers(HttpMethod.DELETE, "/doctor-documents/**").permitAll()
 
                 // -- Fallback --
                 .anyRequest().authenticated()
