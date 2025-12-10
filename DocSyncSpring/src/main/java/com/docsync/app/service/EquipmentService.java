@@ -11,7 +11,6 @@ import com.docsync.app.dao.EquipmentRepository;
 @Service
 
 public class EquipmentService {
-
 	@Autowired
 	private EquipmentRepository eqrepo;
 	

@@ -63,6 +63,9 @@ public class SecurityConfig {
 				.requestMatchers(HttpMethod.POST, "/doctor-documents/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/doctor-documents/**").permitAll()
 				.requestMatchers(HttpMethod.DELETE, "/doctor-documents/**").permitAll()
+				.requestMatchers(HttpMethod.POST, "/insuranceprovider/**").hasRole("ADMIN")
+				.requestMatchers(HttpMethod.GET, "/insuranceprovider/**").permitAll()
+				
 
                 // -- Fallback --
                 .anyRequest().authenticated()
