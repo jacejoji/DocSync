@@ -20,7 +20,6 @@ import com.docsync.app.service.MedicalCampService;
 
 @RestController
 @RequestMapping("/api/medical-camps")
-@CrossOrigin(origins = "*") // Allow requests from your frontend
 public class MedicalCampController {
 
     @Autowired
