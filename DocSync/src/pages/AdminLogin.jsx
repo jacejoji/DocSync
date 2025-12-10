@@ -22,7 +22,7 @@ export default function AdminLogin() {
               <Stethoscope className="h-5 w-5 text-primary" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="font-semibold text-base">DocSync</span>
+              <span className="font-semibold text-base">Doc<span className="text-blue-600 dark:text-blue-400">Sync</span></span>
               <span className="text-[11px] text-muted-foreground">
                 Admin Portal
               </span>

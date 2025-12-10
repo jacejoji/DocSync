@@ -11,6 +11,7 @@ import com.docsync.app.bean.Payroll;
 @Repository
 public interface PayrollRepository extends JpaRepository<Payroll, Long> {
     Optional<Payroll> findByDoctorIdAndMonthAndYear(Long doctorId, String month, Integer year);
-    
+    List<Payroll> findByDoctorId(Long doctorId);
     List<Payroll> findByYear(Integer year);
+    List<Payroll> findByMonthAndYear(String month, Integer year);
 }

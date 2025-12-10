@@ -3,6 +3,7 @@ package com.docsync.app.bean;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import jakarta.persistence.Column;
@@ -16,7 +17,6 @@ import lombok.Data;
 @Entity
 @Table(name = "patients")
 @Data
-@EnableJpaAuditing
 public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,7 +43,7 @@ public class Patient {
     @Column(columnDefinition = "TEXT")
     private String address;
 
-    @Column(name = "blood_group", length = 10)
+    @Column(name = "blood_group", length = 50)
     private String bloodGroup;
 
     @Column(name = "emergency_contact_name", length = 150)
@@ -51,7 +51,7 @@ public class Patient {
 
     @Column(name = "emergency_contact_phone", length = 50)
     private String emergencyContactPhone;
-
+    @CreatedDate
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

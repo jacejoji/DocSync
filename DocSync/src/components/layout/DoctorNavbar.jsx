@@ -108,7 +108,7 @@ export default function DoctorNavbar() {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
           <Stethoscope className="h-5 w-5 text-primary" />
         </div>
-        <span className="hidden sm:inline-block">DocSync</span>
+        <span className="hidden sm:inline-block">Doc<span className="text-blue-600 dark:text-blue-400">Sync</span></span>
       </Link>
 
       {/* 3. Desktop Navigation (Grouped by Function) */}

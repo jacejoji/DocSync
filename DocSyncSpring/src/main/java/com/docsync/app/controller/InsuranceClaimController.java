@@ -48,7 +48,7 @@ public class InsuranceClaimController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    // Look up by Reference Number: /api/insurance-claims/reference/CLM-12345
+    // Look up by Reference Number: /insurance-claims/reference/CLM-12345
     @GetMapping("/reference/{referenceNumber}")
     public ResponseEntity<InsuranceClaim> getClaimByReference(@PathVariable String referenceNumber) {
         return service.getClaimByReferenceNumber(referenceNumber)
@@ -67,7 +67,7 @@ public class InsuranceClaimController {
         return ResponseEntity.ok(service.getClaimsByAppointment(appointmentId));
     }
 
-    // Filter by status: /api/insurance-claims/status?val=PENDING
+    // Filter by status: /insurance-claims/status?val=PENDING
     @GetMapping("/status")
     public ResponseEntity<List<InsuranceClaim>> getClaimsByStatus(@RequestParam("val") String status) {
         return ResponseEntity.ok(service.getClaimsByStatus(status));

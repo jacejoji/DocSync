@@ -18,7 +18,6 @@ import lombok.Data;
 @Entity
 @Table(name = "payroll")
 @Data
-@EnableJpaAuditing
 public class Payroll {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

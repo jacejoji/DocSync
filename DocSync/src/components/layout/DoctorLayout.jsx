@@ -9,7 +9,7 @@ export default function DoctorLayout() {
       <DoctorNavbar />
 
       {/* 2. Dynamic Content Area */}
-      <main className="flex-1 container mx-auto py-6">
+      <main className="flex-1 container mx-auto">
         <Outlet />
       </main>
     </div>

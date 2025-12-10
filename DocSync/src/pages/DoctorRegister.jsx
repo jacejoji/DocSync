@@ -98,6 +98,7 @@ export default function DoctorRegister() {
           description: text || "Please check your inputs and try again.",
         });
       }
+    // eslint-disable-next-line no-unused-vars
     } catch (err) {
       toast.error("Network Error", {
         description: "Could not connect to the server.",
@@ -117,7 +118,7 @@ export default function DoctorRegister() {
               <Stethoscope className="h-5 w-5 text-primary" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="font-semibold text-base">DocSync</span>
+              <span className="font-semibold text-base">Doc<span className="text-blue-600 dark:text-blue-400">Sync</span></span>
               <span className="text-[11px] text-muted-foreground">Doctor Portal</span>
             </div>
           </Link>

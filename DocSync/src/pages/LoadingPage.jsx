@@ -1,5 +1,6 @@
 import React from "react";
 import { Stethoscope } from "lucide-react";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 // Ensure this path matches where you saved your ThemeProvider
 import { useTheme } from "../components/theme/ThemeProvider"; 

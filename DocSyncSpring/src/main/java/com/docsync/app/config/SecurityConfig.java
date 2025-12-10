@@ -68,7 +68,7 @@ public class SecurityConfig {
 				
 
                 // -- Fallback --
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)

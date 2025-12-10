@@ -92,7 +92,7 @@ export default function AdminNavbar() {
                     <div className="flex flex-col gap-4 mt-4">
                         <Link to="/admin/dashboard" className="text-lg font-bold">Dashboard</Link>
                         <div className="text-sm font-semibold text-muted-foreground">HR & Staff</div>
-                        <Link to="/admin/doctors" className="ml-4 text-sm">Doctor Directory</Link>
+                        <Link to="/admin/workforce" className="ml-4 text-sm">Doctor Directory</Link>
                         <Link to="/admin/payroll" className="ml-4 text-sm">Payroll & Salary</Link>
                         <Link to="/admin/roster" className="ml-4 text-sm">Duty Rosters</Link>
                         
@@ -112,7 +112,7 @@ export default function AdminNavbar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
             <ShieldCheck className="h-5 w-5 text-primary" />
           </div>
-          <span className="hidden sm:inline-block">DocSync <span className="text-xs font-normal text-muted-foreground">Admin</span></span>
+          <span className="hidden sm:inline-block">Doc<span className="text-blue-600 dark:text-blue-400">Sync</span> <span className="text-xs font-normal text-muted-foreground">Admin</span></span>
         </Link>
 
         {/* 3. Desktop Navigation (Mega Menu Structure) */}
@@ -129,7 +129,7 @@ export default function AdminNavbar() {
                       <NavigationMenuLink asChild>
                         <Link
                           className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
-                          to="/admin/doctors"
+                          to="/admin/workforce"
                         >
                           <Users className="h-6 w-6" />
                           <div className="mb-2 mt-4 text-lg font-medium">
@@ -144,10 +144,10 @@ export default function AdminNavbar() {
                     <ListItem href="/admin/payroll" title="Payroll" icon={<CreditCard className="h-4 w-4" />}>
                       Salary records, hikes, and processing.
                     </ListItem>
-                    <ListItem href="/admin/leaves" title="Leaves & Attendance" icon={<Activity className="h-4 w-4" />}>
+                    <ListItem href="/admin/leavesandattendance" title="Leaves & Attendance" icon={<Activity className="h-4 w-4" />}>
                       Track check-ins and leave requests.
                     </ListItem>
-                    <ListItem href="/admin/roster" title="Duty Roster" icon={<Briefcase className="h-4 w-4" />}>
+                    <ListItem href="/admin/dutyroster" title="Duty Roster" icon={<Briefcase className="h-4 w-4" />}>
                       Shift management and schedules.
                     </ListItem>
                   </ul>
@@ -165,11 +165,11 @@ export default function AdminNavbar() {
                     <ListItem href="/admin/appointments" title="Appointments" icon={<Stethoscope className="h-4 w-4" />}>
                       Scheduling and status tracking.
                     </ListItem>
-                    <ListItem href="/admin/insurance-claims" title="Insurance Claims" icon={<FileText className="h-4 w-4" />}>
+                    <ListItem href="/admin/insurance" title="Insurance Claims" icon={<FileText className="h-4 w-4" />}>
                       Process claims and approvals.
                     </ListItem>
-                    <ListItem href="/admin/new-applications" title="Applications" icon={<FileText className="h-4 w-4" />}>
-                      Review new job/patient applications.
+                    <ListItem href="/admin/grievance" title="Grievance" icon={<FileText className="h-4 w-4" />}>
+                      Respond to Grievance tickets.
                     </ListItem>
                   </ul>
                 </NavigationMenuContent>
@@ -189,7 +189,7 @@ export default function AdminNavbar() {
                     <ListItem href="/admin/compliance" title="Compliance" icon={<ShieldCheck className="h-4 w-4" />}>
                       Mandatory training and status.
                     </ListItem>
-                    <ListItem href="/admin/camps" title="Medical Camps" icon={<Activity className="h-4 w-4" />}>
+                    <ListItem href="/admin/medicalcamps" title="Medical Camps" icon={<Activity className="h-4 w-4" />}>
                       Outreach programs and assignments.
                     </ListItem>
                   </ul>

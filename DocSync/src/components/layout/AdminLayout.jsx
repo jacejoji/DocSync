@@ -1,6 +1,6 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
-import AdminNavbar from "@/components/layout/AdminNavbar"; // Adjust path to where you saved the Navbar
+import AdminNavbar from "@/components/layout/AdminNavbar";
 
 export default function AdminLayout() {
   return (

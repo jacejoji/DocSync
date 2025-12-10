@@ -24,6 +24,17 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import PublicRoute from "@/components/auth/PublicRoute";
+import ComplianceTraining from "./pages/admin/ComplianceTraining";
+import MedicalCamps from "./pages/admin/MedicalCamps";
+import DutyRosterPage from "./pages/admin/DutyRosterPage";
+import DutyRoster from "./pages/admin/DutyRosterPage";
+import LeavesAndAttendance from "./pages/admin/LeavesAndAttendance";
+import Payroll from "./pages/admin/Payroll";
+import Patients from "./pages/admin/Patients";
+import Appointments from "./pages/admin/Appointments";
+import Insurance from "./pages/admin/Insurance";
+import Grievance from "./pages/admin/Grievance";
+import Workforce from "./pages/admin/Workforce";
 
 export default function App() {
   return (
@@ -99,6 +110,16 @@ export default function App() {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="departments" element={<Departments />} />
               <Route path="equipment" element={<Equipment />} />
+              <Route path="compliance" element={<ComplianceTraining />} />
+              <Route path="medicalcamps" element={<MedicalCamps />} />
+              <Route path="dutyroster" element={<DutyRoster/>} />
+              <Route path="leavesandattendance" element={<LeavesAndAttendance/>} />
+              <Route path="payroll" element={<Payroll/>} />
+              <Route path="patients" element={<Patients/>} />
+              <Route path="appointments" element={<Appointments/>} />
+              <Route path="insurance" element={<Insurance/>} />
+              <Route path="grievance" element={<Grievance/>} />
+              <Route path="workforce" element={<Workforce/>} />
             </Route>
 
             {/* Fallback */}
