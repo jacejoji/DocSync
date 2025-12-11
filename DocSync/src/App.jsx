@@ -35,6 +35,7 @@ import Appointments from "./pages/admin/Appointments";
 import Insurance from "./pages/admin/Insurance";
 import Grievance from "./pages/admin/Grievance";
 import Workforce from "./pages/admin/Workforce";
+import DoctorLeaves from "./pages/doctor/Leaves";
 
 export default function App() {
   return (
@@ -90,7 +91,7 @@ export default function App() {
               <Route path="appointments" element={<div className="p-6">Appointments Page Coming Soon</div>} />
               <Route path="patients" element={<div className="p-6">My Patients Page Coming Soon</div>} />
               <Route path="roster" element={<div className="p-6">Duty Roster Page Coming Soon</div>} />
-              <Route path="leaves" element={<div className="p-6">Leave Management Page Coming Soon</div>} />
+              <Route path="leaves" element={<DoctorLeaves/>} />
               <Route path="payroll" element={<div className="p-6">Payroll Page Coming Soon</div>} />
             </Route>
 

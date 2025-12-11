@@ -4,6 +4,8 @@ import java.time.LocalDate;
 
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -24,6 +26,7 @@ public class LeaveRequest {
     private Long id;
 
     @ManyToOne
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "department", "appointments"})
     @JoinColumn(name = "doctor_id")
     private Doctor doctor;
 

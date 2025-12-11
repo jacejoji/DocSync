@@ -64,7 +64,6 @@ public class LeaveRequestController {
             return ResponseEntity.notFound().build();
         }
     }
-
     @GetMapping("/{id}")
     public ResponseEntity<LeaveRequest> getLeaveRequestById(@PathVariable Long id) {
         return service.getLeaveRequestById(id)

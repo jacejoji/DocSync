@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }) => {
           // STOP THE LOOP: Only set null if not already null
           setUser(prev => (prev !== null ? null : prev));
         }
+      // eslint-disable-next-line no-unused-vars
       } catch (error) {
         setUser(prev => (prev !== null ? null : prev));
       } finally {

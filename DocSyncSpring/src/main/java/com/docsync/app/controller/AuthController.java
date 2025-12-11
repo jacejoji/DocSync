@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.docsync.app.bean.User;
+import com.docsync.app.dao.DoctorRepository;
 import com.docsync.app.dao.UserRepository;
 import com.docsync.app.service.AuthService;
 
@@ -36,6 +37,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final AuthService authService;
 	private final UserRepository userRepository;
+	private final DoctorRepository doctorRepository;
     
     // Helper to save session manually (New requirement in Spring Boot 3)
     private final SecurityContextRepository securityContextRepository = 
@@ -103,6 +105,7 @@ public class AuthController {
         Map<String, String> responseBody = new HashMap<>();
         responseBody.put("username", user.getUsername());
         responseBody.put("role", user.getRole());
+        responseBody.put("id",String.valueOf(doctorRepository.findByEmail(user.getUsername()).get().getId()) );
 
         return ResponseEntity.ok(responseBody);
     }
