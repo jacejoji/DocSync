@@ -1,13 +1,29 @@
-import { useAuth } from "@/context/AuthContext";
+/* eslint-disable no-unused-vars */
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Users,
   Building2,
   AlertCircle,
   TrendingUp,
+  RefreshCcw,
   Search,
-  MoreHorizontal,
+  Clock // Added icon for visual touch
 } from "lucide-react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from "recharts";
 
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,7 +32,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -27,155 +43,381 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import AdminNavbar from "@/components/layout/AdminNavbar";
-import { useEffect, useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import LoadingPage from "./LoadingPage";
+
+const COLORS = ["#0ea5e9", "#22c55e", "#eab308", "#f43f5e", "#8b5cf6", "#64748b"];
 
 export default function AdminDashboard() {
   // eslint-disable-next-line no-unused-vars
-  const { user, logout } = useAuth();
-  const [isLoading, setIsLoading] = useState(true); // <--- 3. Loading State
+  const { user } = useAuth();
 
-  // 4. Simulate Data Fetching Effect
-  useEffect(() => {
-    // In the future, this is where you would await fetch("http://.../appointments")
-    const timer = setTimeout(() => {
+  // --- State ---
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(new Date()); // Track update time
+  
+  // Data State
+  const [doctors, setDoctors] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [pendingApprovals, setPendingApprovals] = useState(0);
+
+  // Filter State
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // --- Helper: Dynamic Greeting ---
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
+
+  // --- Fetch Logic ---
+  const fetchDashboardData = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
+    else setIsRefreshing(true);
+    setError(null);
+
+    try {
+      const [doctorsRes, pendingLeavesRes, departmentsRes] = await Promise.all([
+        fetch("http://localhost:8080/doctor"),
+        fetch("http://localhost:8080/api/leave-requests/status?val=PENDING"),
+        fetch("http://localhost:8080/departments"),
+      ]);
+
+      if (!doctorsRes.ok || !pendingLeavesRes.ok || !departmentsRes.ok) {
+        throw new Error("One or more services failed to respond.");
+      }
+
+      const docData = await doctorsRes.json();
+      const leaveData = await pendingLeavesRes.json();
+      const deptData = await departmentsRes.json();
+
+      setDoctors(docData);
+      setDepartments(deptData);
+      setPendingApprovals(leaveData.length);
+      setLastUpdated(new Date()); // Update timestamp on success
+
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load dashboard data. Please check if the backend is running.");
+    } finally {
       setIsLoading(false);
-    }, 2000); // Show loader for 2 seconds
+      setIsRefreshing(false);
+    }
+  };
 
-    return () => clearTimeout(timer);
+  useEffect(() => {
+    fetchDashboardData();
   }, []);
 
-  // 5. Render Loading Screen if active
-  if (isLoading) {
-    return <LoadingPage />;
-  }
+  // --- Filter Logic ---
+  const filteredDoctors = useMemo(() => {
+    if (!searchQuery) return doctors;
+    const lowerQuery = searchQuery.toLowerCase();
+    return doctors.filter((doc) => 
+      (doc.firstName && doc.firstName.toLowerCase().includes(lowerQuery)) ||
+      (doc.lastName && doc.lastName.toLowerCase().includes(lowerQuery)) ||
+      (doc.email && doc.email.toLowerCase().includes(lowerQuery)) ||
+      (doc.department?.name && doc.department.name.toLowerCase().includes(lowerQuery))
+    );
+  }, [doctors, searchQuery]);
 
-  // Mock Data
-  const recentDoctors = [
-    {
-      name: "Dr. Gregory House",
-      email: "dr.house@docsync.com",
-      dept: "Diagnostic",
-      status: "Active",
-      date: "2024-01-15",
-    },
-    {
-      name: "Dr. Stephen Strange",
-      email: "dr.strange@docsync.com",
-      dept: "Neurology",
-      status: "Active",
-      date: "2024-02-01",
-    },
-    {
-      name: "Dr. Meredith Grey",
-      email: "dr.grey@docsync.com",
-      dept: "General Surgery",
-      status: "On Leave",
-      date: "2023-11-20",
-    },
-  ];
+  // --- Chart Data Preparation ---
+  const departmentChartData = useMemo(() => {
+    const counts = {};
+    filteredDoctors.forEach(doc => {
+      const name = doc.department?.name || "Unassigned";
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    return Object.keys(counts).map(key => ({ name: key, value: counts[key] }));
+  }, [filteredDoctors]);
+
+  const growthChartData = useMemo(() => {
+    const sortedDocs = [...doctors]
+        .filter(d => d.hireDate)
+        .sort((a, b) => new Date(a.hireDate) - new Date(b.hireDate));
+
+    const timeline = {};
+    let runningTotal = 0;
+
+    sortedDocs.forEach(doc => {
+        const date = new Date(doc.hireDate);
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        runningTotal += 1;
+        timeline[key] = runningTotal;
+    });
+
+    return Object.keys(timeline).map(date => ({
+        date,
+        total: timeline[date]
+    }));
+  }, [doctors]);
+
+
+  if (isLoading) return <LoadingPage />;
 
   return (
-    <div className="min-h-screen bg-muted/20">
-
-      <main className="p-6 space-y-8">
-        {/* Stats Row */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Doctors</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">45</div>
-              <p className="text-xs text-muted-foreground">+2 new this month</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Departments</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground">Active units</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">System Health</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">99.9%</div>
-              <p className="text-xs text-muted-foreground">Uptime this week</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
-              <AlertCircle className="h-4 w-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-muted-foreground">Requires attention</p>
-            </CardContent>
-          </Card>
+    <div className="min-h-screen bg-muted/20 p-6 space-y-8 animate-in fade-in duration-500">
+      
+      {/* --- Header Section --- */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-6">
+        <div>
+          {/* Dynamic Greeting */}
+          <h1 className="text-3xl font-bold tracking-tight">
+            {getGreeting()}, Admin.
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Here is what's happening in your hospital today.
+          </p>
         </div>
+        
+        <div className="flex flex-col items-end gap-2">
+           {/* Actions Row */}
+           <div className="flex items-center gap-3">
+                {/* Last Updated Text */}
+                <div className="flex items-center text-xs text-muted-foreground px-3 py-1 rounded-full border">
+                    <Clock className="w-3 h-3 mr-1.5" />
+                    Last updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
 
-        {/* Main Content: Recent Registrations */}
+                <Button 
+                    variant="outline" 
+                    onClick={() => fetchDashboardData(false)}
+                    disabled={isRefreshing}
+                >
+                    <RefreshCcw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    {isRefreshing ? "Syncing..." : "Refresh Data"}
+                </Button>
+           </div>
+        </div>
+      </div>
+
+      {/* --- Error Display --- */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* --- KPI Cards --- */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard 
+          title="Total Doctors" 
+          value={doctors.length} 
+          sub="Registered in system" 
+          icon={Users} 
+        />
+        <StatsCard 
+          title="Departments" 
+          value={departments.length} 
+          sub="Active medical units" 
+          icon={Building2} 
+        />
+        <StatsCard 
+          title="Pending Approvals" 
+          value={pendingApprovals} 
+          sub="Leave requests waiting" 
+          icon={AlertCircle} 
+          highlight={pendingApprovals > 0}
+        />
+        <StatsCard 
+          title="System Health" 
+          value="99.9%" 
+          sub="Operational" 
+          icon={TrendingUp} 
+          className="text-green-600"
+        />
+      </div>
+
+      {/* --- Charts --- */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
             <CardHeader>
-              <CardTitle>Recent Doctor Registrations</CardTitle>
-              <CardDescription>
-                Overview of the latest medical staff added to the system.
-              </CardDescription>
+                <CardTitle>Staff Growth Trend</CardTitle>
+                <CardDescription>Cumulative doctor hiring over time</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Hire Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentDoctors.map((doc) => (
-                    <TableRow key={doc.email}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                                <AvatarFallback>{doc.name[4]}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col">
-                                <span>{doc.name}</span>
-                                <span className="text-xs text-muted-foreground">{doc.email}</span>
-                            </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{doc.dept}</TableCell>
-                      <TableCell>
-                        <Badge variant={doc.status === "Active" ? "outline" : "secondary"}>
-                            {doc.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{doc.date}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <CardContent className="h-[300px]">
+                {growthChartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={growthChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8}/>
+                                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <XAxis dataKey="date" tick={{fontSize: 12}} />
+                            <YAxis tick={{fontSize: 12}} allowDecimals={false}/>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <Tooltip />
+                            <Area 
+                                type="monotone" 
+                                dataKey="total" 
+                                stroke="#0ea5e9" 
+                                fillOpacity={1} 
+                                fill="url(#colorTotal)" 
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="flex h-full items-center justify-center text-muted-foreground">
+                        Not enough data to show trends
+                    </div>
+                )}
             </CardContent>
-          </Card>
-      </main>
+        </Card>
+
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Department Distribution</CardTitle>
+            <CardDescription>Staff allocation by unit</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px] flex justify-center">
+             {departmentChartData.length > 0 ? (
+                <div className="w-full h-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={departmentChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {departmentChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="bottom" height={36}/>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+             ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                   No data available
+                </div>
+             )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* --- Directory Table --- */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div className="space-y-1">
+                <CardTitle>Doctor Directory</CardTitle>
+                <CardDescription>
+                    Manage and view staff details.
+                </CardDescription>
+            </div>
+            <div className="w-[300px] flex items-center gap-2">
+                <div className="relative w-full">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search name, email, or dept..." 
+                        className="pl-8"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+            </div>
+        </CardHeader>
+        <CardContent>
+          <div className="border rounded-md">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Doctor</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date Hired</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDoctors.slice(0, 10).map((doc) => (
+                  <TableRow key={doc.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {doc.firstName?.[0]}{doc.lastName?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{doc.firstName} {doc.lastName}</span>
+                          <span className="text-xs text-muted-foreground">{doc.email}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{doc.department?.name || "Unassigned"}</TableCell>
+                    <TableCell>
+                        <StatusBadge status={doc.status} />
+                    </TableCell>
+                    <TableCell>
+                        {doc.hireDate ? new Date(doc.hireDate).toLocaleDateString() : "-"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                
+                {filteredDoctors.length === 0 && (
+                    <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                            {searchQuery ? "No doctors match your search." : "No doctors found."}
+                        </TableCell>
+                    </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
+}
+
+// --- Components ---
+
+function StatsCard({ title, value, sub, icon: Icon, highlight, className }) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className={`h-4 w-4 text-muted-foreground ${className || ''} ${highlight ? 'text-red-500' : ''}`} />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground">{sub}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatusBadge({ status }) {
+    let variant = "secondary";
+    let className = "";
+
+    switch(status) {
+        case "Active":
+            variant = "outline";
+            className = "bg-green-50 text-green-700 border-green-200";
+            break;
+        case "On Leave":
+            variant = "outline";
+            className = "bg-yellow-50 text-yellow-700 border-yellow-200";
+            break;
+        case "Inactive":
+            className = "bg-gray-100 text-gray-500";
+            break;
+        default:
+            className = "text-muted-foreground";
+    }
+    return <Badge variant={variant} className={className}>{status || "Unknown"}</Badge>;
 }
