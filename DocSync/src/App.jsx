@@ -30,12 +30,14 @@ import DutyRosterPage from "./pages/admin/DutyRosterPage";
 import DutyRoster from "./pages/admin/DutyRosterPage";
 import LeavesAndAttendance from "./pages/admin/LeavesAndAttendance";
 import Payroll from "./pages/admin/Payroll";
+import DoctorPayroll from "./pages/doctor/Payroll";
 import Patients from "./pages/admin/Patients";
 import Appointments from "./pages/admin/Appointments";
 import Insurance from "./pages/admin/Insurance";
 import Grievance from "./pages/admin/Grievance";
 import Workforce from "./pages/admin/Workforce";
 import DoctorLeaves from "./pages/doctor/Leaves";
+import DoctorDocuments from "./pages/doctor/Documents";
 
 export default function App() {
   return (
@@ -92,7 +94,8 @@ export default function App() {
               <Route path="patients" element={<div className="p-6">My Patients Page Coming Soon</div>} />
               <Route path="roster" element={<div className="p-6">Duty Roster Page Coming Soon</div>} />
               <Route path="leaves" element={<DoctorLeaves/>} />
-              <Route path="payroll" element={<div className="p-6">Payroll Page Coming Soon</div>} />
+              <Route path="payroll" element={<DoctorPayroll/>} />
+              <Route path="documents" element={<DoctorDocuments/>}/>
             </Route>
 
             {/* --- ADMIN ROUTES (Nested Layout Architecture) --- */}
