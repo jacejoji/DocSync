@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   ShieldCheck,
@@ -72,9 +72,17 @@ ListItem.displayName = "ListItem";
 
 export default function AdminNavbar() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
   
   // Mock notification count based on your Notification entity
   const unreadNotifications = 3; 
+
+  const handleSearch = (e) => {
+    if (e.key === "Enter" && query.trim() !== "") {
+       navigate(`/admin/workforce?search=${encodeURIComponent(query)}`);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -208,14 +216,17 @@ export default function AdminNavbar() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search doctors, patients..."
+              placeholder="Search doctors..."
               className="w-64 pl-8 bg-background h-9"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleSearch}
             />
           </div>
 
           <ThemeToggle />
 
-          {/* Notifications (Mapped to Notification Entity) */}
+          {/* Notifications */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
@@ -228,7 +239,6 @@ export default function AdminNavbar() {
             <DropdownMenuContent align="end" className="w-80">
                 <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {/* Simulated Data */}
                 <div className="max-h-[300px] overflow-y-auto">
                     <DropdownMenuItem className="cursor-pointer flex flex-col items-start gap-1 p-3">
                         <span className="font-medium text-xs">Leave Request: Dr. Smith</span>
@@ -236,9 +246,9 @@ export default function AdminNavbar() {
                         <span className="text-[10px] text-muted-foreground self-end">2 mins ago</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem className="cursor-pointer flex flex-col items-start gap-1 p-3">
-                         <span className="font-medium text-xs">Inventory Alert</span>
-                         <span className="text-xs text-muted-foreground">MRI Machine service due.</span>
-                         <span className="text-[10px] text-muted-foreground self-end">1 hour ago</span>
+                          <span className="font-medium text-xs">Inventory Alert</span>
+                          <span className="text-xs text-muted-foreground">MRI Machine service due.</span>
+                          <span className="text-[10px] text-muted-foreground self-end">1 hour ago</span>
                     </DropdownMenuItem>
                 </div>
             </DropdownMenuContent>
@@ -248,7 +258,6 @@ export default function AdminNavbar() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Avatar className="cursor-pointer hover:opacity-80 transition-opacity h-9 w-9 border">
-                {/* Fallback to initials if no image */}
                 <AvatarImage src="" /> 
                 <AvatarFallback className="bg-primary/10 text-primary">
                     {user?.username ? user.username.substring(0, 2).toUpperCase() : 'AD'}

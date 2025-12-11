@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { 
   Users, 
   Network, 
@@ -12,7 +13,8 @@ import {
   Mail, 
   Phone, 
   Briefcase, 
-  Loader2 
+  Loader2,
+  MapPin
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/axios";
@@ -60,6 +62,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 
 export default function Workforce() {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("directory");
   const [loading, setLoading] = useState(true);
   
@@ -69,7 +72,17 @@ export default function Workforce() {
   const [doctorProfile, setDoctorProfile] = useState(null); // Fetched profile details
   
   // Search
-  const [searchTerm, setSearchTerm] = useState("");
+  // Initialize from URL param if available
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+
+  // Update search term when URL changes
+  useEffect(() => {
+    const query = searchParams.get("search");
+    if(query) {
+        setSearchTerm(query);
+        setActiveTab("directory");
+    }
+  }, [searchParams]);
 
   // Dialog States
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -204,56 +217,64 @@ export default function Workforce() {
                     </TableHeader>
                     <TableBody>
                         {loading ? <TableRow><TableCell colSpan={6} className="h-24 text-center"><Loader2 className="animate-spin inline mr-2"/> Loading...</TableCell></TableRow> :
-                         filteredDoctors.map(doc => (
-                            <TableRow key={doc.id}>
-                                <TableCell>
-                                    <div className="flex items-center gap-3">
-                                        <Avatar>
-                                            <AvatarFallback className="bg-blue-100 text-blue-700">
-                                                {getInitials(doc.firstName, doc.lastName)}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">{doc.firstName} {doc.lastName}</span>
-                                            <span className="text-xs text-muted-foreground">ID: {doc.id}</span>
+                         filteredDoctors.length > 0 ? (
+                            filteredDoctors.map(doc => (
+                                <TableRow key={doc.id}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar>
+                                                <AvatarFallback className="bg-blue-100 text-blue-700">
+                                                    {getInitials(doc.firstName, doc.lastName)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">{doc.firstName} {doc.lastName}</span>
+                                                <span className="text-xs text-muted-foreground">ID: {doc.id}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col text-sm">
-                                        <span className="flex items-center gap-1 text-muted-foreground"><Mail className="h-3 w-3"/> {doc.email}</span>
-                                        <span className="flex items-center gap-1 text-muted-foreground"><Phone className="h-3 w-3"/> {doc.phone}</span>
-                                    </div>
-                                </TableCell>
-                                <TableCell>{doc.department?.name || "-"}</TableCell>
-                                <TableCell><Badge variant="outline">{doc.specialization}</Badge></TableCell>
-                                <TableCell>
-                                    <Badge variant={doc.status === "Active" ? "default" : "secondary"} className={doc.status === "Active" ? "bg-green-600" : ""}>
-                                        {doc.status || "Active"}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4"/></Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                            <DropdownMenuItem onClick={() => openProfile(doc)}>
-                                                <FileText className="mr-2 h-4 w-4" /> View Profile
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => { setFormData(doc); setIsDialogOpen(true); }}>
-                                                <Pencil className="mr-2 h-4 w-4" /> Edit Details
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(doc.id)}>
-                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col text-sm">
+                                            <span className="flex items-center gap-1 text-muted-foreground"><Mail className="h-3 w-3"/> {doc.email}</span>
+                                            <span className="flex items-center gap-1 text-muted-foreground"><Phone className="h-3 w-3"/> {doc.phone}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{doc.department?.name || "-"}</TableCell>
+                                    <TableCell><Badge variant="outline">{doc.specialization}</Badge></TableCell>
+                                    <TableCell>
+                                        <Badge variant={doc.status === "Active" ? "default" : "secondary"} className={doc.status === "Active" ? "bg-green-600" : ""}>
+                                            {doc.status || "Active"}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4"/></Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                <DropdownMenuItem onClick={() => openProfile(doc)}>
+                                                    <FileText className="mr-2 h-4 w-4" /> View Profile
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => { setFormData(doc); setIsDialogOpen(true); }}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(doc.id)}>
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                         ) : (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                    No doctors found matching "{searchTerm}".
                                 </TableCell>
                             </TableRow>
-                        ))}
+                         )}
                     </TableBody>
                 </Table>
             </div>

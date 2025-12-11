@@ -25,7 +25,7 @@ import {
   Cell
 } from "recharts";
 
-import { useAuth } from "@/context/AuthContext"; // Ensure you have this
+import { useAuth } from "@/context/AuthContext"; 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -60,7 +60,7 @@ const getMonthDays = (year, month) => {
 };
 
 export default function DoctorDutyRoster() {
-  const { user } = useAuth(); // Get logged-in user
+  const { user } = useAuth(); 
   
   // --- State ---
   const [isLoading, setIsLoading] = useState(true);
@@ -84,22 +84,17 @@ export default function DoctorDutyRoster() {
     if (!user?.username) return;
     setIsLoading(true);
     try {
-      // 1. First, find out WHO the current doctor is based on email
       const docRes = await fetch(`http://localhost:8080/doctor/email/${user.username}`);
       if (!docRes.ok) throw new Error("Doctor profile not found");
       const doctorData = await docRes.json();
       setCurrentDoctor(doctorData);
 
-      // 2. Fetch Roster (Global view so they see teammates)
       const rosterRes = await fetch("http://localhost:8080/api/duty-rosters");
       const allRosters = await rosterRes.json();
       setRosters(allRosters);
 
-      // 3. Fetch Overtime (Only THEIR records)
-      // Note: In a real app, backend should filter this. For now we filter on frontend or use a specific endpoint
       const otRes = await fetch("http://localhost:8080/overtimerecord");
       const allOt = await otRes.json();
-      // Filter for current doctor only
       setOvertimeRecords(allOt.filter(rec => rec.doctor?.id === doctorData.id));
 
     } catch (error) {
@@ -125,7 +120,7 @@ export default function DoctorDutyRoster() {
 
     try {
         const payload = {
-            doctor: { id: currentDoctor.id }, // Hardcoded to current user
+            doctor: { id: currentDoctor.id },
             dutyDate: formData.date,
             shift: formData.shift,
             dutyType: formData.dutyType || "Regular"
@@ -153,7 +148,7 @@ export default function DoctorDutyRoster() {
 
     try {
         const payload = {
-            doctor: { id: currentDoctor.id }, // Hardcoded to current user
+            doctor: { id: currentDoctor.id },
             date: formData.date,
             hours: parseInt(formData.hours)
         };
@@ -180,14 +175,12 @@ export default function DoctorDutyRoster() {
   [currentDate]);
 
   const stats = useMemo(() => {
-    // 1. My Upcoming Shifts (Next 7 days)
     const today = new Date();
     const myUpcoming = rosters
         .filter(r => r.doctor?.id === currentDoctor?.id && new Date(r.dutyDate) >= today)
         .sort((a,b) => new Date(a.dutyDate) - new Date(b.dutyDate))
         .slice(0, 5);
 
-    // 2. My Shift Distribution (Pie Chart)
     const shiftCounts = { Morning: 0, Evening: 0, Night: 0 };
     rosters
         .filter(r => r.doctor?.id === currentDoctor?.id)
@@ -202,26 +195,37 @@ export default function DoctorDutyRoster() {
   if (isLoading) return <LoadingPage />;
 
   return (
-    <div className="min-h-screen bg-muted/20 p-6 space-y-8 animate-in fade-in duration-500">
+    // Neutral-950 background for deep black/gray feel
+    <div className="min-h-screen bg-muted/20 dark:bg-neutral-950 p-6 space-y-8 animate-in fade-in duration-500">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Schedule</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">My Schedule</h1>
           <p className="text-muted-foreground">
-             Welcome, Dr. {currentDoctor?.lastName}. Manage your shifts and overtime.
+              Welcome, Dr. {currentDoctor?.lastName}. Manage your shifts and overtime.
           </p>
         </div>
-        <div className="flex bg-muted p-1 rounded-lg border">
+        
+        {/* Toggle Switch */}
+        <div className="flex bg-muted dark:bg-neutral-900 p-1 rounded-lg border dark:border-neutral-800">
             <button 
                 onClick={() => setActiveTab("roster")}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === "roster" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    activeTab === "roster" 
+                    ? "bg-background shadow-sm text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
             >
                 Calendar
             </button>
             <button 
                 onClick={() => setActiveTab("overtime")}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === "overtime" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    activeTab === "overtime" 
+                    ? "bg-background shadow-sm text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
             >
                 My Overtime
             </button>
@@ -235,13 +239,13 @@ export default function DoctorDutyRoster() {
             
             {/* Roster View */}
             {activeTab === "roster" && (
-                <Card className="h-full border-none shadow-sm">
+                <Card className="h-full border-none shadow-sm dark:bg-neutral-900/50">
                     <CardHeader className="flex flex-row items-center justify-between pb-4">
                         <div className="flex items-center gap-4">
                             <CardTitle className="text-xl">
                                 {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                             </CardTitle>
-                            <div className="flex items-center border rounded-md bg-white">
+                            <div className="flex items-center border rounded-md bg-background dark:bg-neutral-900 dark:border-neutral-800">
                                 <Button variant="ghost" size="icon" onClick={() => handleMonthChange(-1)}>
                                     <ChevronLeft className="h-4 w-4" />
                                 </Button>
@@ -256,19 +260,28 @@ export default function DoctorDutyRoster() {
                         </Button>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-7 gap-px bg-muted rounded-lg overflow-hidden border">
+                        {/* Grid: Neutral borders and backgrounds */}
+                        <div className="grid grid-cols-7 gap-px bg-muted dark:bg-neutral-800 rounded-lg overflow-hidden border dark:border-neutral-800">
                             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                                <div key={day} className="bg-muted/50 p-2 text-center text-xs font-semibold text-muted-foreground">
+                                <div key={day} className="bg-muted/50 dark:bg-neutral-900 p-2 text-center text-xs font-semibold text-muted-foreground">
                                     {day}
                                 </div>
                             ))}
                             {monthDays.map((date, i) => {
                                 const daysRosters = rosters.filter(r => r.dutyDate === date.toISOString().split('T')[0]);
-                                // Highlight if it's MY shift
                                 const isMyShift = daysRosters.some(r => r.doctor?.id === currentDoctor?.id);
 
                                 return (
-                                    <div key={i} className={`bg-white min-h-[120px] p-2 hover:bg-slate-50 transition-colors group relative ${isMyShift ? "bg-blue-50/30" : ""}`}>
+                                    <div 
+                                        key={i} 
+                                        className={`
+                                            min-h-[120px] p-2 transition-colors group relative
+                                            ${isMyShift 
+                                                ? "bg-blue-50/30 dark:bg-blue-900/10" 
+                                                : "bg-card dark:bg-neutral-950 hover:bg-neutral-50 dark:hover:bg-neutral-900"
+                                            }
+                                        `}
+                                    >
                                         <span className={`text-sm font-medium ${date.toDateString() === new Date().toDateString() ? "bg-primary text-primary-foreground w-6 h-6 flex items-center justify-center rounded-full" : "text-muted-foreground"}`}>
                                             {date.getDate()}
                                         </span>
@@ -279,17 +292,23 @@ export default function DoctorDutyRoster() {
                                                 return (
                                                     <div 
                                                         key={roster.id} 
-                                                        className={`text-xs p-1.5 rounded border border-l-4 truncate flex items-center gap-1 shadow-sm ${isMe ? "font-bold ring-1 ring-primary/20" : "opacity-80"}`}
+                                                        className={`
+                                                            text-xs p-1.5 rounded border border-l-4 truncate flex items-center gap-1 shadow-sm 
+                                                            dark:bg-neutral-900 dark:border-neutral-800
+                                                            ${isMe ? "font-bold ring-1 ring-primary/20" : "opacity-80"}
+                                                        `}
                                                         style={{ borderLeftColor: SHIFT_COLORS[roster.shift] || '#ccc' }}
                                                     >
                                                         {roster.shift === "Morning" && <Sun className="w-3 h-3 text-amber-500" />}
                                                         {roster.shift === "Evening" && <Sunset className="w-3 h-3 text-orange-500" />}
                                                         {roster.shift === "Night" && <Moon className="w-3 h-3 text-violet-500" />}
-                                                        <span className="text-gray-700">
+                                                        
+                                                        {/* Neutral text color */}
+                                                        <span className="text-gray-700 dark:text-neutral-300">
                                                             {isMe ? "Me" : roster.doctor?.lastName}
                                                         </span>
                                                     </div>
-                                                )
+                                                );
                                             })}
                                         </div>
                                     </div>
@@ -302,7 +321,7 @@ export default function DoctorDutyRoster() {
 
             {/* Overtime View */}
             {activeTab === "overtime" && (
-                <Card>
+                <Card className="dark:bg-neutral-900/50">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>My Overtime Log</CardTitle>
@@ -325,14 +344,14 @@ export default function DoctorDutyRoster() {
                             <TableBody>
                                 {overtimeRecords.map((rec) => (
                                     <TableRow key={rec.id}>
-                                        <TableCell>{rec.date}</TableCell>
+                                        <TableCell className="font-medium text-foreground">{rec.date}</TableCell>
                                         <TableCell>
-                                            <Badge variant="secondary" className="px-3 bg-blue-50 text-blue-700 border-blue-200">
+                                            <Badge variant="secondary" className="px-3 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800">
                                                 +{rec.hours} hrs
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="text-green-600 border-green-200">Logged</Badge>
+                                            <Badge variant="outline" className="text-green-600 border-green-200 dark:text-green-400 dark:border-green-900">Logged</Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon">
@@ -359,7 +378,7 @@ export default function DoctorDutyRoster() {
         <div className="space-y-6">
             
             {/* My Shift Distribution */}
-            <Card>
+            <Card className="dark:bg-neutral-900/50">
                 <CardHeader>
                     <CardTitle className="text-sm font-medium">My Shift Balance</CardTitle>
                 </CardHeader>
@@ -379,7 +398,16 @@ export default function DoctorDutyRoster() {
                                     <Cell key={`cell-${index}`} fill={SHIFT_COLORS[entry.name] || '#8884d8'} />
                                 ))}
                             </Pie>
-                            <Tooltip />
+                            {/* Neutral Tooltip */}
+                            <Tooltip 
+                                contentStyle={{ 
+                                    backgroundColor: 'hsl(var(--card))', 
+                                    borderColor: 'hsl(var(--border))',
+                                    color: 'hsl(var(--foreground))',
+                                    borderRadius: '6px'
+                                }}
+                                itemStyle={{ color: 'hsl(var(--foreground))' }}
+                            />
                         </PieChart>
                     </ResponsiveContainer>
                     <div className="flex justify-center gap-4 text-xs text-muted-foreground mt-2">
@@ -391,16 +419,16 @@ export default function DoctorDutyRoster() {
             </Card>
 
             {/* Upcoming Shifts List */}
-            <Card>
+            <Card className="dark:bg-neutral-900/50">
                 <CardHeader>
                     <CardTitle className="text-sm font-medium">Upcoming Duties</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
                         {stats.myUpcoming.length > 0 ? stats.myUpcoming.map(r => (
-                            <div key={r.id} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
+                            <div key={r.id} className="flex items-center justify-between border-b dark:border-neutral-800 pb-2 last:border-0 last:pb-0">
                                 <div>
-                                    <p className="font-medium text-sm">{new Date(r.dutyDate).toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})}</p>
+                                    <p className="font-medium text-sm text-foreground">{new Date(r.dutyDate).toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})}</p>
                                     <p className="text-xs text-muted-foreground">{r.dutyType}</p>
                                 </div>
                                 <Badge variant="outline" style={{ borderColor: SHIFT_COLORS[r.shift], color: SHIFT_COLORS[r.shift] }}>
@@ -416,12 +444,12 @@ export default function DoctorDutyRoster() {
         </div>
       </div>
 
-      {/* --- Modals (Simplified for Self-Service) --- */}
+      {/* --- Modals --- */}
       
       {/* 1. Add Roster Modal */}
       {isRosterModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
-            <Card className="w-full max-w-md shadow-lg">
+            <Card className="w-full max-w-md shadow-lg bg-background dark:bg-neutral-900 border dark:border-neutral-800">
                 <CardHeader>
                     <CardTitle>Add Self Schedule</CardTitle>
                     <CardDescription>Add a shift for yourself ({currentDoctor?.firstName} {currentDoctor?.lastName}).</CardDescription>
@@ -431,12 +459,12 @@ export default function DoctorDutyRoster() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Date</Label>
-                                <Input type="date" required onChange={(e) => setFormData({...formData, date: e.target.value})} />
+                                <Input type="date" required onChange={(e) => setFormData({...formData, date: e.target.value})} className="dark:bg-neutral-950" />
                             </div>
                             <div className="space-y-2">
                                 <Label>Shift</Label>
                                 <select 
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background dark:bg-neutral-950 px-3 py-2 text-sm text-foreground"
                                     required
                                     onChange={(e) => setFormData({...formData, shift: e.target.value})}
                                 >
@@ -449,7 +477,7 @@ export default function DoctorDutyRoster() {
                         </div>
                         <div className="space-y-2">
                             <Label>Duty Type</Label>
-                            <Input placeholder="e.g. Regular, Emergency, On-Call" onChange={(e) => setFormData({...formData, dutyType: e.target.value})} />
+                            <Input placeholder="e.g. Regular, Emergency, On-Call" onChange={(e) => setFormData({...formData, dutyType: e.target.value})} className="dark:bg-neutral-950" />
                         </div>
                     </CardContent>
                     <div className="p-6 pt-0 flex justify-end gap-2">
@@ -464,7 +492,7 @@ export default function DoctorDutyRoster() {
       {/* 2. Add Overtime Modal */}
       {isOvertimeModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
-            <Card className="w-full max-w-md shadow-lg">
+            <Card className="w-full max-w-md shadow-lg bg-background dark:bg-neutral-900 border dark:border-neutral-800">
                 <CardHeader>
                     <CardTitle>Log My Overtime</CardTitle>
                     <CardDescription>Record extra hours for {currentDoctor?.firstName}.</CardDescription>
@@ -474,11 +502,11 @@ export default function DoctorDutyRoster() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Date</Label>
-                                <Input type="date" required onChange={(e) => setFormData({...formData, date: e.target.value})} />
+                                <Input type="date" required onChange={(e) => setFormData({...formData, date: e.target.value})} className="dark:bg-neutral-950" />
                             </div>
                             <div className="space-y-2">
                                 <Label>Hours</Label>
-                                <Input type="number" min="1" max="24" required placeholder="e.g. 2" onChange={(e) => setFormData({...formData, hours: e.target.value})} />
+                                <Input type="number" min="1" max="24" required placeholder="e.g. 2" onChange={(e) => setFormData({...formData, hours: e.target.value})} className="dark:bg-neutral-950" />
                             </div>
                         </div>
                     </CardContent>
