@@ -26,7 +26,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import PublicRoute from "@/components/auth/PublicRoute";
 import ComplianceTraining from "./pages/admin/ComplianceTraining";
 import MedicalCamps from "./pages/admin/MedicalCamps";
-import DutyRosterPage from "./pages/admin/DutyRosterPage";
+import DutyRosterPage from "./pages/doctor/DutyRosterPage";
 import DutyRoster from "./pages/admin/DutyRosterPage";
 import LeavesAndAttendance from "./pages/admin/LeavesAndAttendance";
 import Payroll from "./pages/admin/Payroll";
@@ -92,7 +92,7 @@ export default function App() {
               {/* Placeholders*/}
               <Route path="appointments" element={<div className="p-6">Appointments Page Coming Soon</div>} />
               <Route path="patients" element={<div className="p-6">My Patients Page Coming Soon</div>} />
-              <Route path="roster" element={<div className="p-6">Duty Roster Page Coming Soon</div>} />
+              <Route path="roster" element={<DutyRosterPage/>} />
               <Route path="leaves" element={<DoctorLeaves/>} />
               <Route path="payroll" element={<DoctorPayroll/>} />
               <Route path="documents" element={<DoctorDocuments/>}/>

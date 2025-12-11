@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { format, addDays, subDays, isValid } from "date-fns"; 
+import { format, addDays, subDays, isValid, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns"; 
 import { 
   Plus, 
   MoreHorizontal, 
@@ -14,10 +14,16 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  AlertTriangle
+  AlertTriangle,
+  LayoutGrid,
+  List,
+  Sun,
+  Moon,
+  Sunset
 } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/axios";
+// Ensure you have this configured, or swap with fetch/axios directly
+import api from "@/lib/axios"; 
 
 // Shadcn UI Components
 import { Button } from "@/components/ui/button";
@@ -77,16 +83,24 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"; 
 import { cn } from "@/lib/utils";
 
+// --- Constants ---
+const SHIFT_COLORS = {
+  Morning: "bg-amber-100 text-amber-700 border-amber-200",
+  Evening: "bg-orange-100 text-orange-700 border-orange-200",
+  Night: "bg-violet-100 text-violet-700 border-violet-200",
+};
+
 // --- Helper for Safe Date Formatting ---
-const safeFormat = (dateInput) => {
+const safeFormat = (dateInput, formatStr = "MMM dd, yyyy") => {
   if (!dateInput) return "N/A";
   const date = new Date(dateInput);
   if (!isValid(date)) return "Invalid Date";
-  return format(date, "MMM dd, yyyy");
+  return format(date, formatStr);
 };
 
 export default function DutyRosterPage() {
   const [activeTab, setActiveTab] = useState("roster");
+  const [viewMode, setViewMode] = useState("list"); // 'list' or 'calendar'
   const [loading, setLoading] = useState(true);
   const [doctors, setDoctors] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -129,8 +143,10 @@ export default function DutyRosterPage() {
   // --- 1. API Actions ---
   const fetchDoctors = async () => {
     try {
-      const response = await api.get("/doctor");
-      setDoctors(Array.isArray(response.data) ? response.data : []);
+      // Fallback to fetch if api instance fails or isn't set up yet
+      const response = await (api ? api.get("/doctor") : fetch("http://localhost:8080/doctor").then(res => res.json()));
+      const data = api ? response.data : response;
+      setDoctors(Array.isArray(data) ? data : []);
     // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast.error("Could not load doctor list.");
@@ -142,7 +158,8 @@ export default function DutyRosterPage() {
     try {
       if (activeTab === "roster") {
         let response;
-        if (viewAllRosters) {
+        // If in Calendar mode, we force fetch all to populate the grid
+        if (viewAllRosters || viewMode === 'calendar') {
           response = await api.get("/api/duty-rosters");
         } else {
           const dateStr = format(filterDate, "yyyy-MM-dd");
@@ -151,7 +168,7 @@ export default function DutyRosterPage() {
         setRosters(Array.isArray(response.data) ? response.data : []);
       } 
       else if (activeTab === "schedule") {
-        const response = await api.get("/api/schedules");
+        const response = await api.get("/api/schedules"); // Ensure backend exists
         setSchedules(Array.isArray(response.data) ? response.data : []);
       }
       else if (activeTab === "overtime") {
@@ -159,12 +176,12 @@ export default function DutyRosterPage() {
         setOvertime(Array.isArray(response.data) ? response.data : []);
       }
       else if (activeTab === "changes") {
-        const response = await api.get("/api/shift-changes");
+        const response = await api.get("/api/shift-changes"); // Ensure backend exists
         setShiftChanges(Array.isArray(response.data) ? response.data : []);
       }
     } catch (error) {
       console.error("Fetch error", error);
-      toast.error("Failed to load data.");
+      // toast.error("Failed to load data. Is backend running?");
     } finally {
       setLoading(false);
     }
@@ -177,7 +194,7 @@ export default function DutyRosterPage() {
   useEffect(() => {
     fetchData();
     setSearchQuery(""); // Reset search on tab change
-  }, [activeTab, filterDate, viewAllRosters]);
+  }, [activeTab, filterDate, viewAllRosters, viewMode]);
 
   // --- 2. Filter Logic (Client Side) ---
   const getActiveData = () => {
@@ -335,9 +352,17 @@ export default function DutyRosterPage() {
   const handlePrevDay = () => setFilterDate(prev => subDays(prev, 1));
   const handleNextDay = () => setFilterDate(prev => addDays(prev, 1));
 
+  // --- Calendar Generator ---
+  const calendarDays = useMemo(() => {
+    if (viewMode !== 'calendar') return [];
+    const start = startOfMonth(filterDate);
+    const end = endOfMonth(filterDate);
+    return eachDayOfInterval({ start, end });
+  }, [filterDate, viewMode]);
+
   // --- RENDER ---
   return (
-    <div className="flex flex-col space-y-6 p-4 md:p-8 pt-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
+    <div className="flex flex-col space-y-6 p-6 animate-in fade-in duration-500 max-w-7xl mx-auto bg-muted/20 min-h-screen">
       
       {/* 1. Dashboard Stats / Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -362,7 +387,7 @@ export default function DutyRosterPage() {
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{rosters.length}</div>
-                <p className="text-xs text-muted-foreground">Shifts scheduled {viewAllRosters ? "in total" : "for this date"}</p>
+                <p className="text-xs text-muted-foreground">Shifts scheduled {(viewAllRosters || viewMode === 'calendar') ? "in total" : "for this date"}</p>
             </CardContent>
         </Card>
         <Card className="shadow-sm">
@@ -414,48 +439,137 @@ export default function DutyRosterPage() {
           <Card>
             <CardHeader className="p-4 pb-2 border-b flex flex-row items-center justify-between bg-muted/20">
                 <div className="flex items-center gap-2">
-                     <Button variant="ghost" size="icon" onClick={handlePrevDay} disabled={viewAllRosters}><ChevronLeft className="h-4 w-4"/></Button>
-                     <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", viewAllRosters && "opacity-50 pointer-events-none")}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {filterDate ? format(filterDate, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={filterDate} onSelect={(date) => date && setFilterDate(date)} initialFocus />
-                        </PopoverContent>
-                    </Popover>
-                    <Button variant="ghost" size="icon" onClick={handleNextDay} disabled={viewAllRosters}><ChevronRight className="h-4 w-4"/></Button>
+                    {/* View Toggle */}
+                     <div className="flex bg-background border rounded-lg p-0.5 mr-2">
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={cn("h-7 px-2", viewMode === 'list' && "bg-muted shadow-sm")} 
+                            onClick={() => setViewMode('list')}
+                        >
+                            <List className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={cn("h-7 px-2", viewMode === 'calendar' && "bg-muted shadow-sm")} 
+                            onClick={() => setViewMode('calendar')}
+                        >
+                            <LayoutGrid className="h-4 w-4" />
+                        </Button>
+                     </div>
+
+                     {/* Date Controls */}
+                     {viewMode === 'list' && (
+                        <>
+                             <Button variant="ghost" size="icon" onClick={handlePrevDay} disabled={viewAllRosters}><ChevronLeft className="h-4 w-4"/></Button>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant={"outline"} className={cn("w-[200px] justify-start text-left font-normal", viewAllRosters && "opacity-50 pointer-events-none")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {filterDate ? format(filterDate, "PPP") : <span>Pick a date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={filterDate} onSelect={(date) => date && setFilterDate(date)} initialFocus />
+                                </PopoverContent>
+                            </Popover>
+                            <Button variant="ghost" size="icon" onClick={handleNextDay} disabled={viewAllRosters}><ChevronRight className="h-4 w-4"/></Button>
+                        </>
+                     )}
+
+                     {viewMode === 'calendar' && (
+                         <div className="flex items-center gap-2">
+                             <Button variant="outline" size="icon" onClick={() => setFilterDate(subDays(startOfMonth(filterDate), 1))}>
+                                <ChevronLeft className="h-4 w-4" />
+                             </Button>
+                             <span className="font-semibold min-w-[120px] text-center">
+                                {format(filterDate, 'MMMM yyyy')}
+                             </span>
+                             <Button variant="outline" size="icon" onClick={() => setFilterDate(addDays(endOfMonth(filterDate), 1))}>
+                                <ChevronRight className="h-4 w-4" />
+                             </Button>
+                         </div>
+                     )}
                 </div>
-                <div className="flex items-center space-x-2">
-                    <Label htmlFor="view-mode" className="text-sm text-muted-foreground">View All History</Label>
-                    <input 
-                        type="checkbox" 
-                        id="view-mode" 
-                        className="toggle-checkbox h-4 w-4"
-                        checked={viewAllRosters} 
-                        onChange={() => setViewAllRosters(!viewAllRosters)}
-                    />
-                </div>
+                
+                {viewMode === 'list' && (
+                    <div className="flex items-center space-x-2">
+                        <Label htmlFor="view-mode" className="text-sm text-muted-foreground">View All</Label>
+                        <input 
+                            type="checkbox" 
+                            id="view-mode" 
+                            className="toggle-checkbox h-4 w-4 accent-primary"
+                            checked={viewAllRosters} 
+                            onChange={() => setViewAllRosters(!viewAllRosters)}
+                        />
+                    </div>
+                )}
             </CardHeader>
             <CardContent className="p-0">
-                <GenericTable 
-                    loading={loading} 
-                    data={filteredData} 
-                    columns={["Doctor", "Date", "Shift", "Duty Type"]}
-                    renderRow={(roster) => (
-                    <TableRow key={roster.id} className="group">
-                        <TableCell><DoctorCell doctor={roster.doctor} /></TableCell>
-                        <TableCell className="text-muted-foreground">{safeFormat(roster.dutyDate)}</TableCell>
-                        <TableCell><ShiftBadge shift={roster.shift} /></TableCell>
-                        <TableCell className="font-medium">{roster.dutyType}</TableCell>
-                        <TableCell className="text-right">
-                        <ActionMenu onEdit={() => openEdit(roster)} onDelete={() => confirmDelete(roster.id)} />
-                        </TableCell>
-                    </TableRow>
-                    )}
-                />
+                {viewMode === 'list' ? (
+                    <GenericTable 
+                        loading={loading} 
+                        data={filteredData} 
+                        columns={["Doctor", "Date", "Shift", "Duty Type"]}
+                        renderRow={(roster) => (
+                        <TableRow key={roster.id} className="group hover:bg-muted/50">
+                            <TableCell><DoctorCell doctor={roster.doctor} /></TableCell>
+                            <TableCell className="text-muted-foreground">{safeFormat(roster.dutyDate)}</TableCell>
+                            <TableCell><ShiftBadge shift={roster.shift} /></TableCell>
+                            <TableCell className="font-medium">{roster.dutyType}</TableCell>
+                            <TableCell className="text-right">
+                            <ActionMenu onEdit={() => openEdit(roster)} onDelete={() => confirmDelete(roster.id)} />
+                            </TableCell>
+                        </TableRow>
+                        )}
+                    />
+                ) : (
+                    // Calendar Grid View
+                    <div className="p-4">
+                        <div className="grid grid-cols-7 gap-px bg-muted rounded-lg overflow-hidden border">
+                             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                <div key={day} className="bg-background/50 p-2 text-center text-xs font-semibold text-muted-foreground">
+                                    {day}
+                                </div>
+                            ))}
+                            {calendarDays.map((date, i) => {
+                                const daysRosters = rosters.filter(r => isSameDay(new Date(r.dutyDate), date));
+                                const isToday = isSameDay(date, new Date());
+                                
+                                return (
+                                    <div key={i} className="bg-background min-h-[120px] p-2 hover:bg-muted/20 transition-colors group relative border-t border-r">
+                                         <div className="flex justify-between items-start">
+                                            <span className={cn("text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full", isToday ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>
+                                                {date.getDate()}
+                                            </span>
+                                            {daysRosters.length > 0 && <Badge variant="outline" className="text-[10px] h-4 px-1">{daysRosters.length}</Badge>}
+                                         </div>
+                                         <div className="mt-2 space-y-1">
+                                            {daysRosters.slice(0,3).map(roster => (
+                                                <div 
+                                                    key={roster.id} 
+                                                    onClick={() => openEdit(roster)}
+                                                    className={cn("text-[10px] p-1 rounded border-l-2 truncate cursor-pointer hover:opacity-80 flex items-center gap-1", SHIFT_COLORS[roster.shift])}
+                                                >
+                                                    {roster.shift === "Morning" && <Sun className="w-2.5 h-2.5" />}
+                                                    {roster.shift === "Evening" && <Sunset className="w-2.5 h-2.5" />}
+                                                    {roster.shift === "Night" && <Moon className="w-2.5 h-2.5" />}
+                                                    {roster.doctor?.lastName}
+                                                </div>
+                                            ))}
+                                            {daysRosters.length > 3 && (
+                                                <div className="text-[10px] text-muted-foreground pl-1">
+                                                    + {daysRosters.length - 3} more
+                                                </div>
+                                            )}
+                                         </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -469,9 +583,9 @@ export default function DutyRosterPage() {
                     data={filteredData} 
                     columns={["Doctor", "Day of Week", "Available From", "Available To"]}
                     renderRow={(sch) => (
-                    <TableRow key={sch.id} className="group">
+                    <TableRow key={sch.id} className="group hover:bg-muted/50">
                         <TableCell><DoctorCell doctor={sch.doctor} /></TableCell>
-                        <TableCell><Badge variant="outline" className="font-mono">{sch.dayOfWeek}</Badge></TableCell>
+                        <TableCell><Badge variant="outline" className="font-mono bg-background">{sch.dayOfWeek}</Badge></TableCell>
                         <TableCell className="text-muted-foreground">{sch.availableFrom}</TableCell>
                         <TableCell className="text-muted-foreground">{sch.availableTo}</TableCell>
                         <TableCell className="text-right">
@@ -493,11 +607,11 @@ export default function DutyRosterPage() {
                     data={filteredData} 
                     columns={["Doctor", "Date", "Hours Logged"]}
                     renderRow={(ot) => (
-                    <TableRow key={ot.id} className="group">
+                    <TableRow key={ot.id} className="group hover:bg-muted/50">
                         <TableCell><DoctorCell doctor={ot.doctor} /></TableCell>
                         <TableCell>{safeFormat(ot.date)}</TableCell>
                         <TableCell>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
                                 +{ot.hours} hrs
                             </span>
                         </TableCell>
@@ -520,7 +634,7 @@ export default function DutyRosterPage() {
                     data={filteredData} 
                     columns={["Doctor", "Date Changed", "Old Shift", "New Shift"]}
                     renderRow={(chg) => (
-                    <TableRow key={chg.id} className="group">
+                    <TableRow key={chg.id} className="group hover:bg-muted/50">
                         <TableCell><DoctorCell doctor={chg.doctor} /></TableCell>
                         <TableCell>{safeFormat(chg.changeDate)}</TableCell>
                         <TableCell><Badge variant="outline" className="line-through text-muted-foreground opacity-70">{chg.oldShift || "None"}</Badge></TableCell>
@@ -605,14 +719,14 @@ export default function DutyRosterPage() {
                     </Select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                     <div className="grid gap-2">
+                      <div className="grid gap-2">
                         <Label>From</Label>
                         <Input type="time" value={formData.availableFrom} onChange={(e) => setFormData({...formData, availableFrom: e.target.value})} />
-                     </div>
-                     <div className="grid gap-2">
+                      </div>
+                      <div className="grid gap-2">
                         <Label>To</Label>
                         <Input type="time" value={formData.availableTo} onChange={(e) => setFormData({...formData, availableTo: e.target.value})} />
-                     </div>
+                      </div>
                   </div>
                 </>
             )}
@@ -637,14 +751,14 @@ export default function DutyRosterPage() {
                     <DatePicker date={formData.changeDate} setDate={(d) => setFormData({...formData, changeDate: d})} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                     <div className="grid gap-2">
+                      <div className="grid gap-2">
                         <Label>Old Shift</Label>
                         <Input value={formData.oldShift} onChange={(e) => setFormData({...formData, oldShift: e.target.value})} placeholder="e.g. Morning"/>
-                     </div>
-                     <div className="grid gap-2">
+                      </div>
+                      <div className="grid gap-2">
                         <Label>New Shift</Label>
                         <Input value={formData.newShift} onChange={(e) => setFormData({...formData, newShift: e.target.value})} placeholder="e.g. Night"/>
-                     </div>
+                      </div>
                   </div>
                 </>
             )}
@@ -689,16 +803,16 @@ function GenericTable({ loading, data, columns, renderRow }) {
     return (
         <Table>
             <TableHeader>
-                <TableRow className="bg-muted/50">
-                    {columns.map((c, i) => <TableHead key={i} className="text-xs font-semibold uppercase">{c}</TableHead>)}
-                    <TableHead className="text-right text-xs font-semibold uppercase">Actions</TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    {columns.map((c, i) => <TableHead key={i} className="text-xs font-semibold uppercase text-muted-foreground">{c}</TableHead>)}
+                    <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">Actions</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {loading ? (
-                     <TableRow><TableCell colSpan={columns.length + 1} className="h-32 text-center"><div className="flex justify-center flex-col items-center text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin mb-2"/>Loading data...</div></TableCell></TableRow>
+                      <TableRow><TableCell colSpan={columns.length + 1} className="h-32 text-center"><div className="flex justify-center flex-col items-center text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin mb-2"/>Loading data...</div></TableCell></TableRow>
                 ) : data.length === 0 ? (
-                     <TableRow><TableCell colSpan={columns.length + 1} className="h-32 text-center text-muted-foreground">No records found matching your criteria.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={columns.length + 1} className="h-32 text-center text-muted-foreground">No records found matching your criteria.</TableCell></TableRow>
                 ) : (
                     data.map(renderRow)
                 )}
@@ -712,8 +826,8 @@ function DoctorCell({ doctor }) {
     const initials = (doctor.firstName?.[0] || "") + (doctor.lastName?.[0] || "");
     return (
         <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-                <AvatarImage src="" /> {/* Add src if you have a photo URL */}
+            <Avatar className="h-8 w-8 border">
+                <AvatarImage src="" />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
@@ -725,12 +839,12 @@ function DoctorCell({ doctor }) {
 }
 
 function ShiftBadge({ shift }) {
-    let styles = "bg-gray-100 text-gray-700";
-    if (shift === "Morning") styles = "bg-amber-100 text-amber-700 hover:bg-amber-200";
-    if (shift === "Evening") styles = "bg-sky-100 text-sky-700 hover:bg-sky-200";
-    if (shift === "Night") styles = "bg-indigo-900 text-indigo-100 hover:bg-indigo-800";
+    let styles = "bg-gray-100 text-gray-700 border-gray-200";
+    if (shift === "Morning") styles = SHIFT_COLORS.Morning;
+    if (shift === "Evening") styles = SHIFT_COLORS.Evening;
+    if (shift === "Night") styles = SHIFT_COLORS.Night;
     
-    return <Badge className={cn("font-normal pointer-events-none", styles)}>{shift}</Badge>
+    return <Badge className={cn("font-medium pointer-events-none border shadow-sm", styles)} variant="outline">{shift}</Badge>
 }
 
 function ActionMenu({ onEdit, onDelete }) {
