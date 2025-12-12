@@ -60,15 +60,15 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/departments/**").permitAll()
                 .requestMatchers(HttpMethod.PATCH, "/equipment/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/equipment/**").permitAll()
-				.requestMatchers(HttpMethod.POST, "/doctor-documents/**").permitAll()
-				.requestMatchers(HttpMethod.GET, "/doctor-documents/**").permitAll()
-				.requestMatchers(HttpMethod.DELETE, "/doctor-documents/**").permitAll()
+				.requestMatchers(HttpMethod.POST, "/doctor-documents/**").hasRole("DOCTOR")
+				.requestMatchers(HttpMethod.GET, "/doctor-documents/**").hasRole("DOCTOR")
+				.requestMatchers(HttpMethod.DELETE, "/doctor-documents/**").hasRole("DOCTOR")
 				.requestMatchers(HttpMethod.POST, "/insuranceprovider/**").hasRole("ADMIN")
 				.requestMatchers(HttpMethod.GET, "/insuranceprovider/**").permitAll()
 				
 
                 // -- Fallback --
-                .anyRequest().permitAll()
+                .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
