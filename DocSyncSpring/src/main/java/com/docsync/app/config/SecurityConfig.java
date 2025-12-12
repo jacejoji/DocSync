@@ -52,7 +52,6 @@ public class SecurityConfig {
 
                 // -- Authentication --
                 .requestMatchers("/auth/**").permitAll()
-
                 // -- Department Restrictions --
                 .requestMatchers(HttpMethod.POST, "/departments/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/departments/**").hasRole("ADMIN")
