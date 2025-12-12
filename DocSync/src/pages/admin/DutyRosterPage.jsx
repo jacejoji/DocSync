@@ -156,32 +156,36 @@ export default function DutyRosterPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      if (activeTab === "roster") {
-        let response;
-        // If in Calendar mode, we force fetch all to populate the grid
-        if (viewAllRosters || viewMode === 'calendar') {
-          response = await api.get("/api/duty-rosters");
-        } else {
-          const dateStr = format(filterDate, "yyyy-MM-dd");
-          response = await api.get(`/api/duty-rosters/date?date=${dateStr}`);
-        }
-        setRosters(Array.isArray(response.data) ? response.data : []);
-      } 
-      else if (activeTab === "schedule") {
-        const response = await api.get("/api/schedules"); // Ensure backend exists
-        setSchedules(Array.isArray(response.data) ? response.data : []);
+      // 1. Prepare Roster Request (Depends on filters)
+      const dateStr = format(filterDate, "yyyy-MM-dd");
+      let rosterPromise;
+
+      if (viewAllRosters || viewMode === 'calendar') {
+        rosterPromise = api.get("/api/duty-rosters");
+      } else {
+        rosterPromise = api.get(`/api/duty-rosters/date?date=${dateStr}`);
       }
-      else if (activeTab === "overtime") {
-        const response = await api.get("/overtimerecord");
-        setOvertime(Array.isArray(response.data) ? response.data : []);
-      }
-      else if (activeTab === "changes") {
-        const response = await api.get("/api/shift-changes"); // Ensure backend exists
-        setShiftChanges(Array.isArray(response.data) ? response.data : []);
-      }
+
+      // 2. Fetch ALL data in parallel. 
+      // This ensures the Dashboard Cards (Overtime/Changes counts) are always accurate,
+      // regardless of which tab is currently open.
+      const [rosterRes, scheduleRes, overtimeRes, changesRes] = await Promise.all([
+        rosterPromise,
+        api.get("/api/schedules"),
+        api.get("/overtimerecord"),
+        api.get("/api/shift-changes")
+      ]);
+
+      // 3. Update all states
+      setRosters(Array.isArray(rosterRes.data) ? rosterRes.data : []);
+      setSchedules(Array.isArray(scheduleRes.data) ? scheduleRes.data : []);
+      setOvertime(Array.isArray(overtimeRes.data) ? overtimeRes.data : []);
+      setShiftChanges(Array.isArray(changesRes.data) ? changesRes.data : []);
+
     } catch (error) {
       console.error("Fetch error", error);
-      // toast.error("Failed to load data. Is backend running?");
+      // Optional: specific error handling if one promise fails
+      toast.error("Failed to sync latest data.");
     } finally {
       setLoading(false);
     }

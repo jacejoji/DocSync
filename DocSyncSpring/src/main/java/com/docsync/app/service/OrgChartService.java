@@ -75,4 +75,32 @@ public class OrgChartService {
     public OrgChart createRelationship(OrgChart orgChart) {
         return orgChartRepository.save(orgChart);
     }
+    public void assignManager(Long doctorId, Long managerId) {
+        // 1. Find or Create the relationship entry
+        Optional<OrgChart> existingRelationship = orgChartRepository.findByDoctorId(doctorId);
+        
+        OrgChart relationship;
+        if (existingRelationship.isPresent()) {
+            relationship = existingRelationship.get();
+        } else {
+            relationship = new OrgChart();
+            relationship.setDoctor(doctorRepository.findById(doctorId).orElseThrow());
+        }
+
+        // 2. Handle NULL manager (Creating a Root Node)
+        if (managerId != null) {
+            relationship.setManager(doctorRepository.findById(managerId).orElseThrow());
+        } else {
+            // Explicitly set manager to null (They are now a Root/CEO)
+            relationship.setManager(null);
+        }
+        
+        orgChartRepository.save(relationship);
+    }
+
+    public void removeManager(Long doctorId) {
+        Optional<OrgChart> existingRelationship = orgChartRepository.findByDoctorId(doctorId);
+        existingRelationship.ifPresent(orgChart -> orgChartRepository.delete(orgChart));
+    }
+    
 }

@@ -35,4 +35,19 @@ public class OrgChartController {
         OrgChart created = orgChartService.createRelationship(orgChart);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
+    @PostMapping("/assign")
+    public ResponseEntity<?> assignManager(@RequestBody Map<String, Long> payload) {
+        Long doctorId = payload.get("doctorId");
+        Long managerId = payload.get("managerId"); // This will be null if not sent
+        
+        orgChartService.assignManager(doctorId, managerId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("/remove")
+    public ResponseEntity<?> removeManager(@RequestBody Map<String, Long> payload) {
+        Long doctorId = payload.get("doctorId");
+        orgChartService.removeManager(doctorId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

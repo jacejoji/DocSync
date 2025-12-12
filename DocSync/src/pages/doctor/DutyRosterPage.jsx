@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState, useMemo } from "react";
 import {
   Calendar as CalendarIcon,
@@ -9,26 +10,19 @@ import {
   Moon,
   Sun,
   Sunset,
-  MoreHorizontal,
-  User
+  MoreHorizontal
 } from "lucide-react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  Tooltip,
+  ResponsiveContainer
 } from "recharts";
 
 import { useAuth } from "@/context/AuthContext"; 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +35,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import LoadingPage from "../LoadingPage";
+
+// IMPORT CUSTOM AXIOS
+import api from "@/lib/axios"; // Adjust path if necessary
 
 // --- Constants ---
 const SHIFT_COLORS = {
@@ -79,23 +76,24 @@ export default function DoctorDutyRoster() {
   const [isOvertimeModalOpen, setIsOvertimeModalOpen] = useState(false);
   const [formData, setFormData] = useState({});
 
-  // --- Fetch Data ---
+  // --- Fetch Data (Using Axios) ---
   const fetchData = async () => {
     if (!user?.username) return;
     setIsLoading(true);
     try {
-      const docRes = await fetch(`http://localhost:8080/doctor/email/${user.username}`);
-      if (!docRes.ok) throw new Error("Doctor profile not found");
-      const doctorData = await docRes.json();
+      // 1. Fetch Doctor Profile
+      const docRes = await api.get(`/doctor/email/${user.username}`);
+      const doctorData = docRes.data;
       setCurrentDoctor(doctorData);
 
-      const rosterRes = await fetch("http://localhost:8080/api/duty-rosters");
-      const allRosters = await rosterRes.json();
-      setRosters(allRosters);
+      // 2. Fetch Rosters
+      const rosterRes = await api.get("/api/duty-rosters");
+      setRosters(rosterRes.data);
 
-      const otRes = await fetch("http://localhost:8080/overtimerecord");
-      const allOt = await otRes.json();
-      setOvertimeRecords(allOt.filter(rec => rec.doctor?.id === doctorData.id));
+      // 3. Fetch Overtime
+      const otRes = await api.get("/overtimerecord");
+      // Filter strictly for this doctor
+      setOvertimeRecords(otRes.data.filter(rec => rec.doctor?.id === doctorData.id));
 
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -126,19 +124,15 @@ export default function DoctorDutyRoster() {
             dutyType: formData.dutyType || "Regular"
         };
         
-        const res = await fetch("http://localhost:8080/api/duty-rosters", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
+        // Axios POST
+        await api.post("/api/duty-rosters", payload);
 
-        if (res.ok) {
-            setIsRosterModalOpen(false);
-            setFormData({});
-            fetchData();
-        }
+        // On success:
+        setIsRosterModalOpen(false);
+        setFormData({});
+        fetchData();
     } catch (err) {
-        console.error(err);
+        console.error("Failed to post roster:", err);
     }
   };
 
@@ -153,19 +147,15 @@ export default function DoctorDutyRoster() {
             hours: parseInt(formData.hours)
         };
         
-        const res = await fetch("http://localhost:8080/overtimerecord", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
+        // Axios POST
+        await api.post("/overtimerecord", payload);
 
-        if (res.ok) {
-            setIsOvertimeModalOpen(false);
-            setFormData({});
-            fetchData();
-        }
+        // On success:
+        setIsOvertimeModalOpen(false);
+        setFormData({});
+        fetchData();
     } catch (err) {
-        console.error(err);
+        console.error("Failed to log overtime:", err);
     }
   };
 
@@ -175,10 +165,16 @@ export default function DoctorDutyRoster() {
   [currentDate]);
 
   const stats = useMemo(() => {
-    const today = new Date();
+    // FIX: Use string comparison for dates to avoid Timezone issues
+    // 'en-CA' locale consistently gives YYYY-MM-DD format
+    const todayStr = new Date().toLocaleDateString("en-CA");
+    
     const myUpcoming = rosters
-        .filter(r => r.doctor?.id === currentDoctor?.id && new Date(r.dutyDate) >= today)
-        .sort((a,b) => new Date(a.dutyDate) - new Date(b.dutyDate))
+        .filter(r => {
+            // Check if it belongs to current doctor AND date is today or future
+            return r.doctor?.id === currentDoctor?.id && r.dutyDate >= todayStr;
+        })
+        .sort((a,b) => a.dutyDate.localeCompare(b.dutyDate)) // String sort is safe for ISO dates
         .slice(0, 5);
 
     const shiftCounts = { Morning: 0, Evening: 0, Night: 0 };
@@ -268,7 +264,9 @@ export default function DoctorDutyRoster() {
                                 </div>
                             ))}
                             {monthDays.map((date, i) => {
-                                const daysRosters = rosters.filter(r => r.dutyDate === date.toISOString().split('T')[0]);
+                                // FIX: Use local date string (YYYY-MM-DD) instead of ISO string (which converts to UTC)
+                                const dateKey = date.toLocaleDateString("en-CA"); 
+                                const daysRosters = rosters.filter(r => r.dutyDate === dateKey);
                                 const isMyShift = daysRosters.some(r => r.doctor?.id === currentDoctor?.id);
 
                                 return (
@@ -390,7 +388,7 @@ export default function DoctorDutyRoster() {
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={40}
-                                outerRadius={60}
+                                outerRadius={75}
                                 paddingAngle={5}
                                 dataKey="value"
                             >
@@ -398,7 +396,6 @@ export default function DoctorDutyRoster() {
                                     <Cell key={`cell-${index}`} fill={SHIFT_COLORS[entry.name] || '#8884d8'} />
                                 ))}
                             </Pie>
-                            {/* Neutral Tooltip */}
                             <Tooltip 
                                 contentStyle={{ 
                                     backgroundColor: 'hsl(var(--card))', 
@@ -428,7 +425,11 @@ export default function DoctorDutyRoster() {
                         {stats.myUpcoming.length > 0 ? stats.myUpcoming.map(r => (
                             <div key={r.id} className="flex items-center justify-between border-b dark:border-neutral-800 pb-2 last:border-0 last:pb-0">
                                 <div>
-                                    <p className="font-medium text-sm text-foreground">{new Date(r.dutyDate).toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})}</p>
+                                    {/* Display date with timezone awareness - append T00:00 to force local interpretation if needed, or rely on parsing string */}
+                                    <p className="font-medium text-sm text-foreground">
+                                        {/* Create date from string carefully to avoid timezone shifts in display */}
+                                        {new Date(r.dutyDate + "T00:00:00").toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})}
+                                    </p>
                                     <p className="text-xs text-muted-foreground">{r.dutyType}</p>
                                 </div>
                                 <Badge variant="outline" style={{ borderColor: SHIFT_COLORS[r.shift], color: SHIFT_COLORS[r.shift] }}>

@@ -7,7 +7,7 @@ import {
   TrendingUp,
   RefreshCcw,
   Search,
-  Clock // Added icon for visual touch
+  Clock 
 } from "lucide-react";
 import {
   PieChart,
@@ -46,17 +46,28 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import LoadingPage from "./LoadingPage";
 
-const COLORS = ["#0ea5e9", "#22c55e", "#eab308", "#f43f5e", "#8b5cf6", "#64748b"];
+// IMPORT YOUR CUSTOM AXIOS INSTANCE
+// Make sure the path points to where you saved your custom axios file
+import api from "@/lib/axios"; // <-- Adjust this path (e.g., ./api or ../lib/api)
 
+const COLORS = [
+  "#0ea5e9", // Sky Blue
+  "#22c55e", // Green
+  "#eab308", // Yellow
+  "#f43f5e", // Rose
+  "#8b5cf6", // Violet
+  "#64748b", // Slate
+  "#ec4899", // Pink (Added)
+  "#14b8a6", // Teal (Added)
+];
 export default function AdminDashboard() {
-  // eslint-disable-next-line no-unused-vars
   const { user } = useAuth();
 
   // --- State ---
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(new Date()); // Track update time
+  const [lastUpdated, setLastUpdated] = useState(new Date());
   
   // Data State
   const [doctors, setDoctors] = useState([]);
@@ -74,35 +85,33 @@ export default function AdminDashboard() {
     return "Good evening";
   };
 
-  // --- Fetch Logic ---
+  // --- Fetch Logic (UPDATED TO USE AXIOS) ---
   const fetchDashboardData = async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
     else setIsRefreshing(true);
     setError(null);
 
     try {
+      // 1. Use api.get instead of fetch
+      // 2. Remove the full URL (localhost:8080) because your api instance already has baseURL
       const [doctorsRes, pendingLeavesRes, departmentsRes] = await Promise.all([
-        fetch("http://localhost:8080/doctor"),
-        fetch("http://localhost:8080/api/leave-requests/status?val=PENDING"),
-        fetch("http://localhost:8080/departments"),
+        api.get("/doctor"),
+        api.get("/api/leave-requests/status?val=PENDING"),
+        api.get("/departments"),
       ]);
 
-      if (!doctorsRes.ok || !pendingLeavesRes.ok || !departmentsRes.ok) {
-        throw new Error("One or more services failed to respond.");
-      }
-
-      const docData = await doctorsRes.json();
-      const leaveData = await pendingLeavesRes.json();
-      const deptData = await departmentsRes.json();
-
-      setDoctors(docData);
-      setDepartments(deptData);
-      setPendingApprovals(leaveData.length);
-      setLastUpdated(new Date()); // Update timestamp on success
+      // 3. Axios stores the actual JSON data in .data
+      setDoctors(doctorsRes.data);
+      setDepartments(departmentsRes.data);
+      setPendingApprovals(pendingLeavesRes.data.length);
+      
+      setLastUpdated(new Date()); 
 
     } catch (err) {
       console.error(err);
-      setError("Failed to load dashboard data. Please check if the backend is running.");
+      // Axios errors usually store the server message in err.response.data
+      const errorMsg = err.response?.data?.message || "Failed to load dashboard data. Please check connection.";
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -113,6 +122,8 @@ export default function AdminDashboard() {
     fetchDashboardData();
   }, []);
 
+  // ... (The rest of your component: Filter Logic, Chart Data, JSX remains exactly the same)
+  
   // --- Filter Logic ---
   const filteredDoctors = useMemo(() => {
     if (!searchQuery) return doctors;
@@ -284,11 +295,11 @@ export default function AdminDashboard() {
                     <PieChart>
                       <Pie
                         data={departmentChartData}
-                        cx="50%"
+                        cx="40%"                 // Moved left to make room for legend
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
+                        innerRadius={50}         // Slightly thicker ring
+                        outerRadius={120}        // Increased overall size
+                        paddingAngle={2}
                         dataKey="value"
                       >
                         {departmentChartData.map((entry, index) => (
@@ -296,7 +307,13 @@ export default function AdminDashboard() {
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend verticalAlign="bottom" height={36}/>
+                      {/* Legend moved to the right side (Vertical Layout) */}
+                      <Legend 
+                        layout="vertical" 
+                        verticalAlign="middle" 
+                        align="right"
+                        wrapperStyle={{ fontSize: "12px" }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -383,7 +400,7 @@ export default function AdminDashboard() {
   );
 }
 
-// --- Components ---
+// --- Components (Unchanged) ---
 
 function StatsCard({ title, value, sub, icon: Icon, highlight, className }) {
   return (

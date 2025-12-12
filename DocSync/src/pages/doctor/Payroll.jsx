@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { 
@@ -13,9 +14,8 @@ import { toast } from "sonner";
 import api from "@/lib/axios";
 import { useAuth } from "@/context/AuthContext";
 
-// --- PDF Libraries ---
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+// Import the new utility
+import { generatePayslip } from "@/lib/payslipGenerator"; // <--- Adjust path as needed
 
 // Shadcn UI Components
 import { Button } from "@/components/ui/button";
@@ -45,13 +45,11 @@ export default function DoctorPayroll() {
   // --- 1. User Resolution (Self-Healing Logic) ---
   useEffect(() => {
     const resolveUser = async () => {
-      // Check Context
       if (user && user.id) {
         setResolvedUserId(user.id);
         return;
       }
       
-      // Check Manual Fetch
       if (!authLoading) {
         try {
           const res = await api.get("/auth/me");
@@ -60,7 +58,6 @@ export default function DoctorPayroll() {
           } else {
             setIsLoadingData(false);
           }
-        // eslint-disable-next-line no-unused-vars
         } catch (error) {
           setIsLoadingData(false);
         }
@@ -85,14 +82,10 @@ export default function DoctorPayroll() {
       ]);
 
       const historyData = Array.isArray(historyRes.data) ? historyRes.data : [];
-      
       setPayrolls(Array.isArray(payrollRes.data) ? payrollRes.data : []);
       setSalaryHistory(historyData);
       
-      // --- FIX: Correctly determine "Current" Salary ---
-      // 1. Filter out future dates (hikes scheduled for later)
-      // 2. Sort by Date Descending (Newest first)
-      // 3. Pick the first one
+      // Determine Current Salary (Active record logic)
       const today = new Date();
       const activeRecord = [...historyData]
         .filter(rec => new Date(rec.effectiveFrom) <= today)
@@ -119,61 +112,14 @@ export default function DoctorPayroll() {
 
   const formatDate = (dateStr) => (!dateStr ? "-" : format(new Date(dateStr), "MMM dd, yyyy"));
 
-  // --- 3. FIX: PDF Generation Logic ---
-  const handleDownload = (payroll) => {
-    try {
-        const doc = new jsPDF();
-
-        // Header
-        doc.setFillColor(41, 128, 185); // Blue Header
-        doc.rect(0, 0, 210, 20, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(16);
-        doc.text("SALARY SLIP", 105, 13, null, null, "center");
-
-        // Info Section
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(10);
-        
-        const startY = 35;
-        doc.text(`Employee ID: ${resolvedUserId}`, 14, startY);
-        doc.text(`Name: ${user?.name || user?.username || "Doctor"}`, 14, startY + 6);
-        
-        doc.text(`Pay Period: ${payroll.month} ${payroll.year}`, 140, startY);
-        doc.text(`Generated: ${format(new Date(), "dd-MM-yyyy")}`, 140, startY + 6);
-
-        // Separator
-        doc.setDrawColor(200, 200, 200);
-        doc.line(14, startY + 12, 196, startY + 12);
-
-        // Table
-        autoTable(doc, {
-            startY: startY + 20,
-            head: [['Earnings / Deductions', 'Amount (INR)']],
-            body: [
-                ['Basic Salary (Gross)', formatCurrency(payroll.grossSalary)],
-                ['Tax & Deductions', `-${formatCurrency(payroll.deductions)}`],
-                [{ content: 'NET PAYABLE', styles: { fontStyle: 'bold', fillColor: [220, 252, 231] } }, 
-                 { content: formatCurrency(payroll.netSalary), styles: { fontStyle: 'bold', fillColor: [220, 252, 231], textColor: [22, 163, 74] } }]
-            ],
-            theme: 'grid',
-            headStyles: { fillColor: [51, 65, 85] }, // Slate-700
-            styles: { fontSize: 10, cellPadding: 3 },
-        });
-
-        // Footer
-        const finalY = doc.lastAutoTable.finalY + 30;
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text("System Generated Payslip. DocSync Doctor Management.", 105, finalY, null, null, "center");
-
-        doc.save(`Payslip_${payroll.month}_${payroll.year}.pdf`);
-        toast.success("Payslip downloaded.");
-
-    } catch (error) {
-        console.error(error);
-        toast.error("Failed to generate PDF.");
-    }
+  // --- 3. Handler for Download ---
+  const handleDownloadClick = (payroll) => {
+    const employeeDetails = {
+        id: resolvedUserId,
+        name: user?.name || user?.username || "Doctor"
+    };
+    // Call the utility
+    generatePayslip(payroll, employeeDetails);
   };
 
   // --- Render ---
@@ -287,7 +233,7 @@ export default function DoctorPayroll() {
                                         {formatDate(p.processedAt)}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" onClick={() => handleDownload(p)}>
+                                        <Button variant="ghost" size="sm" onClick={() => handleDownloadClick(p)}>
                                             <Download className="h-4 w-4 mr-2" /> Slip
                                         </Button>
                                     </TableCell>
@@ -315,7 +261,6 @@ export default function DoctorPayroll() {
                         {salaryHistory.length === 0 ? (
                             <TableRow><TableCell colSpan={4} className="h-24 text-center text-muted-foreground">No salary history found.</TableCell></TableRow>
                         ) : (
-                            // Use safe spread copy to sort
                             [...salaryHistory]
                                 .sort((a,b) => new Date(b.effectiveFrom) - new Date(a.effectiveFrom))
                                 .map((record, index) => (
