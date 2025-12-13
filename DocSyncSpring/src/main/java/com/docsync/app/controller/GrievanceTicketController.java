@@ -56,4 +56,14 @@ public class GrievanceTicketController {
        public ResponseEntity<List<GrievanceTicket>> getAllGrievanceTickets() {
            return ResponseEntity.ok(gtserv.getAllGrievanceTickets());
        }
+	   
+	   @GetMapping("/{doctorid}")
+	   public ResponseEntity<List<GrievanceTicket>> getGrievanceTicketByDoctorId(@PathVariable("doctorid") Long doctorId) {
+		   List<GrievanceTicket> grievanceTicket = gtserv.getGrievanceTicketByDoctorId(doctorId);
+		   if (grievanceTicket != null) {
+			   return new ResponseEntity<>(grievanceTicket, HttpStatus.OK);
+		   } else {
+			   return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		   }
+	   }
 }

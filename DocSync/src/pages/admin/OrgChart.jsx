@@ -31,7 +31,6 @@ const getLayoutedElements = (nodes, edges) => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-  // ranksep: vertical gap, nodesep: horizontal gap
   dagreGraph.setGraph({ rankdir: "TB", ranksep: 100, nodesep: 60 });
 
   nodes.forEach((node) => {
@@ -85,7 +84,7 @@ function OrgChartContent() {
         toast.error("Failed to remove relationship");
         fetchOrgChart(); 
     }
-  }, []);
+  }, [setEdges]); 
 
   // --- FETCH DATA ---
   const fetchOrgChart = useCallback(async () => {
@@ -123,6 +122,7 @@ function OrgChartContent() {
         position: { x: 0, y: 0 }
       }));
 
+      // Edges: Using #a3a3a3 (Neutral-400) for a neutral gray line
       const flowEdges = relationships
         .filter(rel => rel.manager !== null && rel.doctor !== null)
         .map((rel) => ({
@@ -134,8 +134,8 @@ function OrgChartContent() {
                 targetId: rel.doctor.id, 
                 onDelete: handleDeleteEdge 
             },
-            markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
-            style: { stroke: '#94a3b8', strokeWidth: 2 }
+            markerEnd: { type: MarkerType.ArrowClosed, color: '#a3a3a3' },
+            style: { stroke: '#a3a3a3', strokeWidth: 2 }
       }));
 
       const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(flowNodes, flowEdges);
@@ -209,10 +209,11 @@ function OrgChartContent() {
   useEffect(() => { fetchOrgChart(); }, [fetchOrgChart]);
 
   return (
-    <div className="flex h-[750px] border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-slate-50 relative">
+    // Main Container: Neutral Backgrounds
+    <div className="flex h-[750px] border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden shadow-sm bg-neutral-50 dark:bg-neutral-950 relative">
         
         {loading && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm pointer-events-none">
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 dark:bg-neutral-950/50 backdrop-blur-sm pointer-events-none">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         )}
@@ -236,14 +237,25 @@ function OrgChartContent() {
                 maxZoom={1.5}
                 fitView
                 proOptions={{ hideAttribution: true }} 
+                // Force dark class on the wrapper
+                className="bg-neutral-50 dark:bg-neutral-950"
             >
-                <Controls className="!bg-white !border-slate-200 !text-slate-700" />
-                <Background color="#94a3b8" gap={24} size={1} className="opacity-20" />
+                <Controls 
+                    // Neutral Styling for Controls (pure white/gray)
+                    className="!bg-white dark:!bg-neutral-900 !border-neutral-200 dark:!border-neutral-800 !text-neutral-700 dark:!text-neutral-200 [&>button]:!border-b-neutral-100 dark:[&>button]:!border-b-neutral-800 [&>button:hover]:!bg-neutral-50 dark:[&>button:hover]:!bg-neutral-800" 
+                />
                 
-                <Panel position="top-right" className="bg-white/90 p-2 rounded-lg shadow border border-slate-200 backdrop-blur">
+                <Background 
+                    color="#737373" // Neutral-500
+                    gap={24} 
+                    size={1} 
+                    className="opacity-20 dark:opacity-10" 
+                />
+                
+                <Panel position="top-right" className="bg-white/90 dark:bg-neutral-900/90 p-2 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800 backdrop-blur">
                     <button 
                         onClick={fetchOrgChart}
-                        className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-primary transition-colors"
+                        className="flex items-center gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:text-primary dark:hover:text-primary transition-colors"
                     >
                         <RefreshCcw className="w-3.5 h-3.5" />
                         Reset Layout

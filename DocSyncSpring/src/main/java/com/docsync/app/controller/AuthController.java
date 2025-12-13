@@ -106,6 +106,7 @@ public class AuthController {
         responseBody.put("username", user.getUsername());
         responseBody.put("role", user.getRole());
         responseBody.put("id",String.valueOf(doctorRepository.findByEmail(user.getUsername()).get().getId()) );
+        responseBody.put("userid",user.getId().toString());
 
         return ResponseEntity.ok(responseBody);
     }

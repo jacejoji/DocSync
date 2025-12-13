@@ -35,7 +35,7 @@ export default function DeletableEdge({
           }}
         >
           <button
-            className="w-5 h-5 bg-white border border-red-200 text-red-500 rounded-full flex items-center justify-center text-xs hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-sm z-50 cursor-pointer"
+            className="w-5 h-5 bg-white dark:bg-neutral-900 border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 rounded-full flex items-center justify-center text-xs hover:bg-red-500 hover:text-white hover:border-red-500 dark:hover:bg-red-600 dark:hover:border-red-600 transition-all shadow-sm z-50 cursor-pointer"
             onClick={(evt) => {
               evt.stopPropagation();
               if (data?.onDelete) {

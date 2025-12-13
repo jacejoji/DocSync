@@ -40,4 +40,8 @@ public class GrievanceTicketService {
 	public List<GrievanceTicket> getAllGrievanceTickets(){
 		return gtrepo.findAll();
 	}
+
+	public List<GrievanceTicket> getGrievanceTicketByDoctorId(Long id) {
+		return gtrepo.findByDoctorId(id);
+	}
 }

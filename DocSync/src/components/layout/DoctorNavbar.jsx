@@ -15,7 +15,8 @@ import {
   Clock,
   Briefcase,
   FileText,
-  BadgeDollarSign
+  BadgeDollarSign,
+  Timer // Added Timer icon for Time Sheet
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -96,6 +97,8 @@ export default function DoctorNavbar() {
 
                     <div className="text-sm font-semibold text-muted-foreground mt-2">Work & Schedule</div>
                     <Link to="/doctor/roster" className="ml-4 text-sm">Duty Roster</Link>
+                    {/* Added Mobile Time Sheet Link */}
+                    <Link to="/doctor/timesheet" className="ml-4 text-sm">Time Sheet</Link>
                     <Link to="/doctor/leaves" className="ml-4 text-sm">Leave Requests</Link>
                     <Link to="/doctor/payroll" className="ml-4 text-sm">My Payroll</Link>
                 </div>
@@ -140,11 +143,11 @@ export default function DoctorNavbar() {
                             <ListItem href="/doctor/patients" title="My Patients" icon={<Users className="h-4 w-4" />}>
                                 Access patient history, diagnosis, and treatments.
                             </ListItem>
-                            <ListItem href="/doctor/tasks" title="Tasks" icon={<ClipboardList className="h-4 w-4" />}>
-                                View assigned medical tasks and follow-ups.
+                            <ListItem href="/doctor/grievances" title="Grievances" icon={<ClipboardList className="h-4 w-4" />}>
+                                Raise grievances and view follow-ups.
                             </ListItem>
-                            <ListItem href="/doctor/camps" title="Medical Camps" icon={<Briefcase className="h-4 w-4" />}>
-                                Upcoming camp assignments.
+                            <ListItem href="/doctor/campsandequipment" title="Camps & Equipment" icon={<Briefcase className="h-4 w-4" />}>
+                                Camp assignments and equipment management
                             </ListItem>
                         </ul>
                     </NavigationMenuContent>
@@ -157,6 +160,10 @@ export default function DoctorNavbar() {
                         <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
                             <ListItem href="/doctor/roster" title="Duty Roster" icon={<Clock className="h-4 w-4" />}>
                                 Check shift timings and weekly schedule.
+                            </ListItem>
+                            {/* Added Desktop Time Sheet Link */}
+                            <ListItem href="/doctor/timesheet" title="Time Sheet" icon={<Timer className="h-4 w-4" />}>
+                                Log daily working hours and overtime.
                             </ListItem>
                             <ListItem href="/doctor/leaves" title="Leaves" icon={<FileText className="h-4 w-4" />}>
                                 Apply for leave and view status.
@@ -232,11 +239,18 @@ export default function DoctorNavbar() {
             </DropdownMenuTrigger>
             
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <DropdownMenuLabel>
+                              <div className="flex flex-col space-y-1">
+                                  <p className="text-sm font-medium leading-none">Dr.{user?.username || "Doctor"}</p>
+                                  <p className="text-xs leading-none text-muted-foreground">{user?.role || "Medical Expert"}</p>
+                              </div>
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
               <DropdownMenuItem className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <span>My Profile</span>
+                <Link to="/doctor/profile">
+        <User className="mr-2 h-4 w-4" />
+        <span>My Profile</span>
+      </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />

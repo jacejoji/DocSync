@@ -54,5 +54,8 @@ public class EquipmentService {
     public Optional<Equipment> getEquipmentBySerialNumber(String serialNumber) {
         return eqrepo.findBySerialNumber(serialNumber);
     }
+    public Optional<Equipment> getEquipmentById(Long id) {
+        return eqrepo.findById(id); 
+    }
 	
 }

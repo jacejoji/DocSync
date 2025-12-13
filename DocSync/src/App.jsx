@@ -38,6 +38,12 @@ import Grievance from "./pages/admin/Grievance";
 import Workforce from "./pages/admin/Workforce";
 import DoctorLeaves from "./pages/doctor/Leaves";
 import DoctorDocuments from "./pages/doctor/Documents";
+import MyPatients from "./pages/doctor/MyPatients";
+import CampsAndEquipment from "./pages/doctor/CampsAndEquipment";
+import Grievances from "./pages/doctor/Grievances";
+import TimeSheet from "./pages/doctor/TimeSheet";
+import Appointment from "./pages/doctor/Appointment";
+import DoctorProfile from "./pages/doctor/DoctorProfile";
 
 export default function App() {
   return (
@@ -90,12 +96,16 @@ export default function App() {
               <Route path="dashboard" element={<DoctorDashboard />} />
               
               {/* Placeholders*/}
-              <Route path="appointments" element={<div className="p-6">Appointments Page Coming Soon</div>} />
-              <Route path="patients" element={<div className="p-6">My Patients Page Coming Soon</div>} />
+              <Route path="appointments" element={<Appointment/>} />
+              <Route path="patients" element={<MyPatients/>} />
+              <Route path="timesheet" element={<TimeSheet/>} />
+              <Route path="grievances" element={<Grievances/>} />
+              <Route path="campsandequipment" element={<CampsAndEquipment/>}/>
               <Route path="roster" element={<DutyRosterPage/>} />
               <Route path="leaves" element={<DoctorLeaves/>} />
               <Route path="payroll" element={<DoctorPayroll/>} />
               <Route path="documents" element={<DoctorDocuments/>}/>
+              <Route path="profile" element={<DoctorProfile/>}/>
             </Route>
 
             {/* --- ADMIN ROUTES (Nested Layout Architecture) --- */}

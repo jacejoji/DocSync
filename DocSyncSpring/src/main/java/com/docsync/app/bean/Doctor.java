@@ -4,6 +4,8 @@ import java.time.LocalDate;
 
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -40,6 +42,7 @@ public class Doctor {
 
     @ManyToOne
     @JoinColumn(name = "department_id")
+    
     private Department department;
 
     @Column(name = "hire_date")
