@@ -13,12 +13,16 @@ import {
   AlertCircle,
   CreditCard,
   DollarSign,
-  ChevronRight
+  ChevronRight,
+  Check,
+  ChevronsUpDown
 } from "lucide-react";
+import { toast } from "sonner"; // IMPORT SONNER
 
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/axios";
 import LoadingPage from "../LoadingPage";
+import { cn } from "@/lib/utils";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -28,7 +32,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +47,29 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"; // IMPORT ALERT DIALOG
 import { Separator } from "@/components/ui/separator";
 
 export default function Appointment() {
@@ -55,19 +81,30 @@ export default function Appointment() {
   
   // Data State
   const [appointments, setAppointments] = useState([]);
+  const [allPatients, setAllPatients] = useState([]); 
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   
-  // Patient Specific Data (fetched when an appointment is selected)
+  // Patient Specific Data
   const [patientPolicies, setPatientPolicies] = useState([]);
   const [appointmentClaims, setAppointmentClaims] = useState([]);
   
-  // Modals
+  // Modals State
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+  const [isAddApptModalOpen, setIsAddApptModalOpen] = useState(false);
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false); // New Confirmation State
+  
+  // Combobox State
+  const [openPatientCombo, setOpenPatientCombo] = useState(false);
+
+  // Form Data State
   const [newClaimData, setNewClaimData] = useState({ amount: "", policyId: "" });
+  const [newApptData, setNewApptData] = useState({ patientId: "", dateTime: "", notes: "" });
+  const [rescheduleData, setRescheduleData] = useState({ dateTime: "" });
 
   // --- Initial Fetch ---
   useEffect(() => {
-    const fetchDoctorAndAppointments = async () => {
+    const fetchInitialData = async () => {
         if (!user?.username) return;
         setIsLoading(true);
         try {
@@ -77,76 +114,182 @@ export default function Appointment() {
             setCurrentDoctor(doctorData);
 
             // 2. Get Upcoming Appointments
-            const apptRes = await api.get(`/appointments/doctor/${doctorData.id}/upcoming`);
-            setAppointments(apptRes.data);
-            
-            // Select the first one by default if available
-            if (apptRes.data.length > 0) {
-                handleSelectAppointment(apptRes.data[0]);
-            } else {
-                setIsLoading(false);
+            await refreshAppointments(doctorData.id);
+
+            // 3. Fetch All Patients
+            try {
+                const patRes = await api.get("/api/patients"); 
+                setAllPatients(patRes.data);
+            } catch (err) {
+                console.warn("Could not fetch patient list", err);
             }
+
         } catch (error) {
             console.error("Error fetching initial data:", error);
+            toast.error("Failed to load appointment data");
+        } finally {
             setIsLoading(false);
         }
     };
 
-    fetchDoctorAndAppointments();
+    fetchInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Helper to refresh list
+  const refreshAppointments = async (doctorId) => {
+      const idToUse = doctorId || currentDoctor?.id;
+      if(!idToUse) return;
+      try {
+        const apptRes = await api.get(`/appointments/doctor/${idToUse}/upcoming`);
+        setAppointments(apptRes.data);
+        
+        if (selectedAppointment) {
+            const updatedSelected = apptRes.data.find(a => a.id === selectedAppointment.id);
+            if (updatedSelected) {
+                setSelectedAppointment(updatedSelected);
+            }
+        } else if (apptRes.data.length > 0) {
+            handleSelectAppointment(apptRes.data[0]);
+        }
+      } catch (error) {
+        console.error("Refresh failed", error);
+      }
+  };
 
   // --- Handlers ---
 
   const handleSelectAppointment = async (appt) => {
     setSelectedAppointment(appt);
-    
-    // Fetch Contextual Data for this Appointment
     if (appt?.patient?.id) {
         try {
-            // A. Fetch Insurance Policies
             const policyRes = await api.get(`/api/patient-insurance/patient/${appt.patient.id}`);
             setPatientPolicies(policyRes.data);
 
-            // B. Fetch Existing Claims for this Appointment
             const claimRes = await api.get(`/insurance-claims/appointment/${appt.id}`);
             setAppointmentClaims(claimRes.data);
-
         } catch (error) {
-            console.error("Error fetching patient details:", error);
+            console.error("Error fetching details:", error);
+            toast.error("Could not fetch patient insurance details");
         }
     }
-    setIsLoading(false);
+  };
+
+  const handleAddAppointment = async () => {
+    if (!newApptData.patientId || !newApptData.dateTime) return;
+
+    try {
+        const payload = {
+            doctor: { id: currentDoctor.id },
+            patient: { id: newApptData.patientId },
+            appointmentTime: newApptData.dateTime, 
+            status: "Scheduled",
+            notes: newApptData.notes
+        };
+
+        await api.post("/appointments", payload);
+        
+        setIsAddApptModalOpen(false);
+        setNewApptData({ patientId: "", dateTime: "", notes: "" });
+        await refreshAppointments();
+        toast.success("Appointment scheduled successfully");
+
+    } catch (error) {
+        console.error("Failed to create appointment:", error);
+        toast.error("Failed to schedule appointment");
+    }
+  };
+
+  const handleReschedule = async () => {
+      if (!selectedAppointment || !rescheduleData.dateTime) return;
+      try {
+          const payload = {
+              ...selectedAppointment,
+              appointmentTime: rescheduleData.dateTime,
+              status: "Rescheduled"
+          };
+          await api.put(`/appointments/${selectedAppointment.id}`, payload);
+          setIsRescheduleModalOpen(false);
+          setRescheduleData({ dateTime: "" });
+          await refreshAppointments();
+          toast.success("Appointment rescheduled");
+      } catch (error) {
+          console.error("Failed to reschedule:", error);
+          toast.error("Failed to reschedule appointment");
+      }
+  };
+
+  const handleCompleteConsultation = async () => {
+      if (!selectedAppointment) return;
+
+      // 1. Clean Payload: Only send the fields the backend actually updates.
+      // We exclude 'patient' and 'doctor' objects to prevent circular JSON issues.
+      const payload = {
+          id: selectedAppointment.id,
+          appointmentTime: selectedAppointment.appointmentTime,
+          status: "Completed",
+          notes: selectedAppointment.notes
+      };
+
+      try {
+          await api.put(`/appointments/${selectedAppointment.id}`, payload);
+          
+          // Happy Path: If backend returns 200 OK
+          await refreshAppointments();
+          setIsCompleteDialogOpen(false);
+          toast.success("Consultation completed successfully");
+
+      } catch (error) {
+          console.warn("Update request threw error, verifying data integrity...");
+
+          // WORKAROUND:
+          // If the backend saved the data but crashed while returning the response (JSON recursion),
+          // the database is actually correct. We manually verify this here.
+          try {
+              // 1. Fetch the specific appointment fresh from the server
+              const verifyRes = await api.get(`/appointments/${selectedAppointment.id}`);
+              const freshData = verifyRes.data;
+
+              // 2. Check if the status IS actually "Completed" in the database
+              if (freshData && freshData.status === "Completed") {
+                  // SUCCESS! It worked despite the error.
+                  await refreshAppointments(); 
+                  setIsCompleteDialogOpen(false);
+                  toast.success("Consultation completed successfully");
+                  return; 
+              }
+          } catch (verifyErr) {
+              console.error("Verification check failed", verifyErr);
+          }
+
+          // Real Failure: If verification didn't find "Completed", then it really failed.
+          console.error("Failed to complete:", error);
+          toast.error("Failed to update status. Please try again.");
+      }
   };
 
   const handleSubmitClaim = async () => {
     if (!selectedAppointment || !newClaimData.policyId || !newClaimData.amount) return;
-
     try {
-        const selectedPolicy = patientPolicies.find(p => p.id.toString() === newClaimData.policyId);
-        
         const payload = {
             appointment: { id: selectedAppointment.id },
             patientInsurancePolicy: { id: parseInt(newClaimData.policyId) },
             submissionDate: new Date().toISOString(),
             totalBillAmount: parseFloat(newClaimData.amount),
-            claimedAmount: parseFloat(newClaimData.amount), // Assuming full claim for now
+            claimedAmount: parseFloat(newClaimData.amount),
             status: "PENDING",
-            claimReferenceNumber: `CLM-${Date.now()}` // Generate a frontend ref or let backend handle it
+            claimReferenceNumber: `CLM-${Date.now()}`
         };
 
         await api.post("/insurance-claims", payload);
-        
-        // Refresh Claims
         const claimRes = await api.get(`/insurance-claims/appointment/${selectedAppointment.id}`);
         setAppointmentClaims(claimRes.data);
-        
         setIsClaimModalOpen(false);
         setNewClaimData({ amount: "", policyId: "" });
-        
+        toast.success("Insurance claim submitted");
     } catch (error) {
         console.error("Failed to submit claim:", error);
-        alert("Failed to submit claim. Please try again.");
+        toast.error("Failed to submit claim");
     }
   };
 
@@ -160,7 +303,7 @@ export default function Appointment() {
         <div className="p-4 border-b">
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold tracking-tight">Appointments</h2>
-                <Button size="icon" variant="ghost">
+                <Button size="icon" variant="ghost" onClick={() => setIsAddApptModalOpen(true)}>
                     <Plus className="h-5 w-5" />
                 </Button>
             </div>
@@ -196,7 +339,8 @@ export default function Appointment() {
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                                 <Badge variant="outline" className={
-                                    appt.status === 'Confirmed' ? 'text-green-600 border-green-200 bg-green-50' : 
+                                    appt.status === 'Completed' ? 'text-blue-600 border-blue-200 bg-blue-50' :
+                                    appt.status === 'Confirmed' || appt.status === 'Scheduled' ? 'text-green-600 border-green-200 bg-green-50' : 
                                     appt.status === 'Pending' ? 'text-amber-600 border-amber-200 bg-amber-50' : ''
                                 }>
                                     {appt.status}
@@ -213,11 +357,10 @@ export default function Appointment() {
         </ScrollArea>
       </div>
 
-      {/* --- RIGHT MAIN CONTENT: Detail View --- */}
+      {/* --- RIGHT MAIN CONTENT --- */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {selectedAppointment ? (
             <>
-                {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b bg-background">
                     <div className="flex items-center gap-4">
                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
@@ -233,16 +376,31 @@ export default function Appointment() {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                         <Button variant="outline">Reschedule</Button>
-                         <Button>Start Consultation</Button>
+                         <Button 
+                            variant="outline" 
+                            onClick={() => {
+                                setRescheduleData({ dateTime: selectedAppointment.appointmentTime });
+                                setIsRescheduleModalOpen(true);
+                            }}
+                            disabled={selectedAppointment.status === "Completed"}
+                         >
+                            Reschedule
+                         </Button>
+
+                         {selectedAppointment.status === "Completed" ? (
+                             <Button disabled className="bg-green-600 text-white opacity-100">
+                                <Check className="mr-2 h-4 w-4"/> Completed
+                             </Button>
+                         ) : (
+                             <Button onClick={() => setIsCompleteDialogOpen(true)}>
+                                Complete Consultation
+                             </Button>
+                         )}
                     </div>
                 </div>
 
-                {/* Dashboard Content */}
                 <ScrollArea className="flex-1 p-6">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        
-                        {/* 1. Clinical Notes & Info */}
                         <div className="lg:col-span-2 space-y-6">
                             <Card className="dark:bg-neutral-900/50">
                                 <CardHeader>
@@ -260,7 +418,6 @@ export default function Appointment() {
                                 </CardContent>
                             </Card>
 
-                            {/* Claims History for this Appointment */}
                             <Card className="dark:bg-neutral-900/50">
                                 <CardHeader className="flex flex-row items-center justify-between">
                                     <CardTitle className="text-base flex items-center gap-2">
@@ -302,10 +459,7 @@ export default function Appointment() {
                             </Card>
                         </div>
 
-                        {/* 2. Sidebar: Insurance & Vitals */}
                         <div className="space-y-6">
-                            
-                            {/* Insurance Check Card */}
                             <Card className="border-l-4 border-l-blue-500 shadow-sm dark:bg-neutral-900/50">
                                 <CardHeader className="pb-2">
                                     <CardTitle className="text-sm font-medium flex items-center justify-between">
@@ -328,15 +482,10 @@ export default function Appointment() {
                                                     </div>
                                                     <div className="text-xs space-y-1 text-muted-foreground">
                                                         <p>Policy #: <span className="font-mono text-foreground">{policy.policyNumber}</span></p>
-                                                        <p>Plan: {policy.planName}</p>
-                                                        <div className="flex justify-between mt-2 pt-2 border-t border-dashed border-blue-200 dark:border-blue-900">
-                                                            <span>Co-Pay: ${policy.coPayAmount}</span>
-                                                            <span>{policy.coInsurancePercent}% Co-Ins</span>
-                                                        </div>
+                                                        {policy.isPrimary && (
+                                                            <Badge variant="secondary" className="mt-2 text-[10px] h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">Primary Payer</Badge>
+                                                        )}
                                                     </div>
-                                                    {policy.isPrimary && (
-                                                        <Badge variant="secondary" className="mt-2 text-[10px] h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">Primary Payer</Badge>
-                                                    )}
                                                 </div>
                                             ))}
                                         </div>
@@ -344,38 +493,19 @@ export default function Appointment() {
                                         <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
                                             <ShieldAlert className="h-8 w-8 text-red-400" />
                                             <p className="text-sm font-medium">No Active Policy Found</p>
-                                            <p className="text-xs text-muted-foreground">Please verify payment method with patient.</p>
                                         </div>
                                     )}
                                 </CardContent>
-                                <CardFooter className="pt-0">
-                                    <Button variant="ghost" size="sm" className="w-full text-xs">View Full Eligibility</Button>
-                                </CardFooter>
                             </Card>
 
-                            {/* Patient Vitals Placeholder */}
                              <Card className="dark:bg-neutral-900/50">
                                 <CardHeader className="pb-2">
                                     <CardTitle className="text-sm font-medium">Last Recorded Vitals</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-2 bg-muted/40 rounded">
-                                            <p className="text-xs text-muted-foreground">BP</p>
-                                            <p className="font-bold">120/80</p>
-                                        </div>
-                                        <div className="p-2 bg-muted/40 rounded">
-                                            <p className="text-xs text-muted-foreground">Heart Rate</p>
-                                            <p className="font-bold">72 bpm</p>
-                                        </div>
-                                        <div className="p-2 bg-muted/40 rounded">
-                                            <p className="text-xs text-muted-foreground">Temp</p>
-                                            <p className="font-bold">98.6°F</p>
-                                        </div>
-                                        <div className="p-2 bg-muted/40 rounded">
-                                            <p className="text-xs text-muted-foreground">Weight</p>
-                                            <p className="font-bold">70 kg</p>
-                                        </div>
+                                        <div className="p-2 bg-muted/40 rounded"><p className="text-xs text-muted-foreground">BP</p><p className="font-bold">120/80</p></div>
+                                        <div className="p-2 bg-muted/40 rounded"><p className="text-xs text-muted-foreground">Heart Rate</p><p className="font-bold">72 bpm</p></div>
                                     </div>
                                 </CardContent>
                              </Card>
@@ -391,14 +521,129 @@ export default function Appointment() {
         )}
       </div>
 
+      {/* --- MODAL: Add Appointment with Searchable Patient List --- */}
+      <Dialog open={isAddApptModalOpen} onOpenChange={setIsAddApptModalOpen}>
+        <DialogContent className="sm:max-w-[425px] overflow-visible">
+            <DialogHeader>
+                <DialogTitle>Create New Appointment</DialogTitle>
+                <DialogDescription>
+                    Search and select a patient to schedule a visit.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid gap-2 flex flex-col">
+                    <Label htmlFor="patient">Patient</Label>
+                    
+                    {/* Searchable Combobox */}
+                    <Popover open={openPatientCombo} onOpenChange={setOpenPatientCombo}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={openPatientCombo}
+                                className="w-full justify-between"
+                            >
+                                {newApptData.patientId
+                                    ? allPatients.find((patient) => patient.id.toString() === newApptData.patientId)?.firstName + " " + allPatients.find((patient) => patient.id.toString() === newApptData.patientId)?.lastName
+                                    : "Select patient..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0">
+                            <Command>
+                                <CommandInput placeholder="Search patient name or ID..." />
+                                <CommandList>
+                                    <CommandEmpty>No patient found.</CommandEmpty>
+                                    <CommandGroup>
+                                        {allPatients.map((patient) => (
+                                            <CommandItem
+                                                key={patient.id}
+                                                value={`${patient.firstName} ${patient.lastName} ${patient.id}`}
+                                                onSelect={() => {
+                                                    setNewApptData({...newApptData, patientId: patient.id.toString()});
+                                                    setOpenPatientCombo(false);
+                                                }}
+                                            >
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        newApptData.patientId === patient.id.toString() ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                />
+                                                <div className="flex flex-col">
+                                                    <span>{patient.firstName} {patient.lastName}</span>
+                                                    <span className="text-xs text-muted-foreground">ID: {patient.id} | {patient.email}</span>
+                                                </div>
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor="datetime">Date & Time</Label>
+                    <Input 
+                        id="datetime" 
+                        type="datetime-local" 
+                        onChange={(e) => setNewApptData({...newApptData, dateTime: e.target.value})}
+                    />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="notes">Initial Notes</Label>
+                    <Textarea 
+                        id="notes" 
+                        placeholder="Reason for visit..."
+                        onChange={(e) => setNewApptData({...newApptData, notes: e.target.value})}
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddApptModalOpen(false)}>Cancel</Button>
+                <Button onClick={handleAddAppointment} disabled={!newApptData.patientId || !newApptData.dateTime}>
+                    Schedule
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- MODAL: Reschedule Appointment --- */}
+      <Dialog open={isRescheduleModalOpen} onOpenChange={setIsRescheduleModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Reschedule Appointment</DialogTitle>
+                <DialogDescription>
+                    Choose a new time for {selectedAppointment?.patient?.firstName}'s visit.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                    <Label htmlFor="reschedule-time">New Date & Time</Label>
+                    <Input 
+                        id="reschedule-time" 
+                        type="datetime-local"
+                        value={rescheduleData.dateTime} 
+                        onChange={(e) => setRescheduleData({ dateTime: e.target.value })}
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsRescheduleModalOpen(false)}>Cancel</Button>
+                <Button onClick={handleReschedule} disabled={!rescheduleData.dateTime}>
+                    Confirm Reschedule
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* --- MODAL: Create Insurance Claim --- */}
       <Dialog open={isClaimModalOpen} onOpenChange={setIsClaimModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
                 <DialogTitle>Submit Insurance Claim</DialogTitle>
-                <DialogDescription>
-                    Create a new claim for {selectedAppointment?.patient?.firstName}'s visit.
-                </DialogDescription>
+                <DialogDescription>Create a new claim.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
                 {patientPolicies.length === 0 && (
@@ -407,7 +652,6 @@ export default function Appointment() {
                         Warning: No insurance policies on file.
                     </div>
                 )}
-
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="policy" className="text-right">Policy</Label>
                     <Select 
@@ -449,6 +693,26 @@ export default function Appointment() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* --- ALERT DIALOG: Complete Consultation Confirmation --- */}
+      <AlertDialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Complete Consultation?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will mark the appointment as completed and finalize the visit. 
+                    Ensure all clinical notes and claims are added before proceeding.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleCompleteConsultation}>
+                    Complete Consultation
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }

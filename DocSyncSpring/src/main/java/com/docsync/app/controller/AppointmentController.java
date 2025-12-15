@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -65,4 +66,26 @@ public class AppointmentController {
         appointmentService.deleteAppointment(id);
         return ResponseEntity.noContent().build();
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateAppointment(@PathVariable Long id, @RequestBody Appointment appointmentDetails) {
+        try {
+            Appointment existingAppointment = appointmentService.getAppointmentById(id);
+            
+            if (existingAppointment == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Update fields
+            existingAppointment.setAppointmentTime(appointmentDetails.getAppointmentTime());
+            existingAppointment.setStatus(appointmentDetails.getStatus());
+            existingAppointment.setNotes(appointmentDetails.getNotes());
+      
+            Appointment updated = appointmentService.createAppointment(existingAppointment); 
+            
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
 }

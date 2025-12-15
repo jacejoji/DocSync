@@ -18,12 +18,12 @@ public class AppointmentService {
 
     // Create / Book Appointment
     public Appointment createAppointment(Appointment appointment) {
-        // 1. Basic Validation: Ensure doctor and time are present
+        //Ensure doctor and time are present
         if (appointment.getDoctor() == null || appointment.getAppointmentTime() == null) {
             throw new IllegalArgumentException("Doctor and Appointment Time are required.");
         }
 
-        // 2. Check for Conflicts (30 min slot assumption)
+        //Check for Conflicts (30 min slot assumption)
         LocalDateTime startTime = appointment.getAppointmentTime();
         LocalDateTime endTime = startTime.plusMinutes(30); // Assuming 30 min duration
 
@@ -50,7 +50,7 @@ public class AppointmentService {
                 .orElseThrow(() -> new RuntimeException("Appointment not found with ID: " + id));
     }
 
-    // Using your custom repository method
+   
     public List<Appointment> getUpcomingAppointmentsForDoctor(Long doctorId) {
         return appointmentRepository.findByDoctorIdAndAppointmentTimeAfterOrderByAppointmentTimeAsc(
                 doctorId, 
@@ -58,7 +58,6 @@ public class AppointmentService {
         );
     }
 
-    // Using your custom repository method
     public List<Appointment> getPatientHistory(Long patientId) {
         return appointmentRepository.findByPatientIdOrderByAppointmentTimeDesc(patientId);
     }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom'; // Added useLocation
 import axios from '@/lib/axios';
 import { format } from 'date-fns';
 import { 
@@ -28,6 +29,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const MyPatients = () => {
+  // --- URL Search Params Hook ---
+  const location = useLocation();
+
   // --- State ---
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +42,15 @@ const MyPatients = () => {
   const [patientHistory, setPatientHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // --- Effect: Handle Search from Navbar (URL) ---
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get('q');
+    if (q) {
+      setSearchQuery(q);
+    }
+  }, [location.search]);
 
   // --- Fetch ---
   useEffect(() => {
@@ -104,7 +117,6 @@ const MyPatients = () => {
             Manage patient records and view clinical history.
           </p>
         </div>
-        {/* Removed "Add New Patient" button */}
       </div>
 
       <Card className="border-border/60 shadow-sm">
@@ -206,12 +218,12 @@ const MyPatients = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                       <Badge variant="outline" className="font-normal text-muted-foreground bg-background">
+                        <Badge variant="outline" className="font-normal text-muted-foreground bg-background">
                           Blood: <span className="font-bold text-foreground ml-1">{patient.bloodGroup || 'N/A'}</span>
-                       </Badge>
+                        </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                       {patient.createdAt ? format(new Date(patient.createdAt), 'MMM dd, yyyy') : '-'}
+                        {patient.createdAt ? format(new Date(patient.createdAt), 'MMM dd, yyyy') : '-'}
                     </TableCell>
                     <TableCell className="text-right pr-6">
                       <Button 
@@ -258,7 +270,6 @@ const MyPatients = () => {
                     </div>
                   </div>
                 </div>
-                {/* Removed New Appointment & Call Buttons */}
               </div>
 
               {/* 2. Dialog Content (Scrollable) */}

@@ -20,7 +20,7 @@ export default function LoadingPage() {
 
   return (
     // Tailwind 'dark:' classes automatically handle the background color
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-500">
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-neutral-50 dark:bg-neutral-950 transition-colors duration-500">
       
       {/* --- Background Decor --- */}
       <div className="absolute inset-0 z-0 opacity-40 dark:opacity-20 pointer-events-none transition-opacity duration-500">

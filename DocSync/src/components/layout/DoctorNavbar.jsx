@@ -1,5 +1,6 @@
-import React from "react";
-import { Link } from "react-router-dom";
+/* eslint-disable no-unused-vars */
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom"; // Added useNavigate
 import { useAuth } from "@/context/AuthContext";
 import {
   Stethoscope,
@@ -16,7 +17,8 @@ import {
   Briefcase,
   FileText,
   BadgeDollarSign,
-  Timer // Added Timer icon for Time Sheet
+  Timer,
+  LayoutDashboard // Added Icon
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +39,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
+  navigationMenuTriggerStyle // Usually needed for top level links, defined fallback in class otherwise
 } from "@/components/ui/navigation-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import ThemeToggle from "@/components/theme/ThemeToggle";
@@ -72,6 +75,17 @@ ListItem.displayName = "ListItem";
 
 export default function DoctorNavbar() {
   const { user, logout } = useAuth();
+  
+  // --- Search Implementation ---
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSearch = (e) => {
+    if (e.key === "Enter") {
+      // Navigate to patients page with query param
+      navigate(`/doctor/patients?q=${encodeURIComponent(searchTerm)}`);
+    }
+  };
 
   // Mock notifications based on Notification entity
   const unreadNotifications = 2; 
@@ -97,7 +111,6 @@ export default function DoctorNavbar() {
 
                     <div className="text-sm font-semibold text-muted-foreground mt-2">Work & Schedule</div>
                     <Link to="/doctor/roster" className="ml-4 text-sm">Duty Roster</Link>
-                    {/* Added Mobile Time Sheet Link */}
                     <Link to="/doctor/timesheet" className="ml-4 text-sm">Time Sheet</Link>
                     <Link to="/doctor/leaves" className="ml-4 text-sm">Leave Requests</Link>
                     <Link to="/doctor/payroll" className="ml-4 text-sm">My Payroll</Link>
@@ -119,6 +132,15 @@ export default function DoctorNavbar() {
         <NavigationMenu>
             <NavigationMenuList>
                 
+                {/* --- ADDED DASHBOARD TAB --- */}
+                <NavigationMenuItem>
+                  <Link to="/doctor/dashboard">
+                    <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 cursor-pointer">
+                      Dashboard
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+
                 {/* Clinical Module */}
                 <NavigationMenuItem>
                     <NavigationMenuTrigger>Clinical Care</NavigationMenuTrigger>
@@ -161,7 +183,6 @@ export default function DoctorNavbar() {
                             <ListItem href="/doctor/roster" title="Duty Roster" icon={<Clock className="h-4 w-4" />}>
                                 Check shift timings and weekly schedule.
                             </ListItem>
-                            {/* Added Desktop Time Sheet Link */}
                             <ListItem href="/doctor/timesheet" title="Time Sheet" icon={<Timer className="h-4 w-4" />}>
                                 Log daily working hours and overtime.
                             </ListItem>
@@ -190,6 +211,10 @@ export default function DoctorNavbar() {
             type="search"
             placeholder="Search patients..."
             className="w-64 pl-8 bg-background h-9"
+            // --- Connected to State ---
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleSearch}
           />
         </div>
 
@@ -225,7 +250,7 @@ export default function DoctorNavbar() {
             <p className="text-sm font-medium leading-none">
                 {user?.username ? user.username.split("@")[0] : "Doctor"}
             </p>
-            <p className="text-xs text-muted-foreground">Cardiology</p> {/* Static for now, can be dynamic */}
+            <p className="text-xs text-muted-foreground">Cardiology</p>
           </div>
 
           <DropdownMenu>
