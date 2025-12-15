@@ -2,7 +2,7 @@ import axios from "axios";
 
 // 1. Create the instance
 const api = axios.create({
-  baseURL: "http://localhost:8080", // Adjust port if needed
+  baseURL: "https://docsync.datavoid.in", // Adjust port if needed
   withCredentials: true, // IMPORTANT: Allows sending Cookies (JSESSIONID) to backend
 });
 

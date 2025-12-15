@@ -41,7 +41,7 @@ export default function DoctorRegister() {
 
   // 1. Fetch Departments
   useEffect(() => {
-    fetch("http://localhost:8080/departments")
+    fetch("https://docsync.datavoid.in/departments")
       .then((res) => res.json())
       .then((data) => setDepartments(data))
       .catch(() => {
@@ -81,7 +81,7 @@ export default function DoctorRegister() {
     };
 
     try {
-      const response = await fetch("http://localhost:8080/auth/register", {
+      const response = await fetch("https://docsync.datavoid.in/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

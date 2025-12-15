@@ -83,7 +83,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         
         // ALLOW YOUR FRONTEND URL (Adjust port if not 5173)
-        configuration.setAllowedOrigins(List.of("http://localhost:5173")); 
+        configuration.setAllowedOrigins(List.of("http://16.112.128.57:5173","http://docsync.datavoid.in","https://docsync.datavoid.in")); 
         
         // Allow necessary HTTP methods
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

@@ -1,7 +1,7 @@
 import axios from '@/lib/axios';
 
 // Configure your base URL (adjust port if needed)
-const API_URL = "http://localhost:8080/departments";
+const API_URL = "https://docsync.datavoid.in/departments";
 
 export const departmentService = {
   // GET /departments

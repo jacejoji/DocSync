@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await fetch("http://localhost:8080/auth/me", {
+        const res = await fetch("https://docsync.datavoid.in/auth/me", {
           credentials: "include",
         });
 
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await fetch("http://localhost:8080/auth/logout", {
+      await fetch("https://docsync.datavoid.in/auth/logout", {
         method: "POST",
         credentials: "include",
       });

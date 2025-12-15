@@ -1,6 +1,6 @@
 import axios from '@/lib/axios';
 
-const API_URL = "http://localhost:8080/equipment";
+const API_URL = "https://docsync.datavoid.in/equipment";
 
 export const equipmentService = {
   // GET /equipment

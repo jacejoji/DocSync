@@ -144,7 +144,7 @@ export default function DutyRosterPage() {
   const fetchDoctors = async () => {
     try {
       // Fallback to fetch if api instance fails or isn't set up yet
-      const response = await (api ? api.get("/doctor") : fetch("http://localhost:8080/doctor").then(res => res.json()));
+      const response = await (api ? api.get("/doctor") : fetch("https://docsync.datavoid.in/doctor").then(res => res.json()));
       const data = api ? response.data : response;
       setDoctors(Array.isArray(data) ? data : []);
     // eslint-disable-next-line no-unused-vars

@@ -93,7 +93,7 @@ export default function AdminDashboard() {
 
     try {
       // 1. Use api.get instead of fetch
-      // 2. Remove the full URL (localhost:8080) because your api instance already has baseURL
+      // 2. Remove the full URL (16.112.128.57:8080) because your api instance already has baseURL
       const [doctorsRes, pendingLeavesRes, departmentsRes] = await Promise.all([
         api.get("/doctor"),
         api.get("/api/leave-requests/status?val=PENDING"),
