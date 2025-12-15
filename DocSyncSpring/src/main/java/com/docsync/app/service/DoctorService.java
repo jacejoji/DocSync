@@ -64,4 +64,9 @@ public class DoctorService {
 		return drepo.findByStatus(status);
 	}
 	
+	//find by id
+	public Optional<Doctor> findById(Long id){
+		return drepo.findById(id);
+	}
+	
 }

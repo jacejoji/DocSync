@@ -247,7 +247,7 @@ export default function DoctorNavbar() {
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
               <DropdownMenuItem className="cursor-pointer">
-                <Link to="/doctor/profile">
+                <Link to="/doctor/profile" className="flex flex-row">
         <User className="mr-2 h-4 w-4" />
         <span>My Profile</span>
       </Link>

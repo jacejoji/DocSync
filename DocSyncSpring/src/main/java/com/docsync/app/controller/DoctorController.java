@@ -84,6 +84,12 @@ public class DoctorController {
         List<Doctor> doctors = doctorService.findByStatus(status);
         return new ResponseEntity<>(doctors, HttpStatus.OK);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<Doctor> findById(@PathVariable Long id) {
+        Optional<Doctor> doctor = doctorService.findById(id);
+        return doctor.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
+                     .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
 
 
 }
